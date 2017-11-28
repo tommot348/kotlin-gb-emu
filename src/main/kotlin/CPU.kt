@@ -11,6 +11,7 @@ class CPU() {
   private var L: Short = 0
   private var SP: Int = 0
   private var PC: Int = 0
+  private val stack: HashMap<Int, Int> = HashMap()
 
   private val ram = RAM()
 
@@ -118,25 +119,123 @@ class CPU() {
       return rthis
   }
   infix fun Short.ADD(a: Short): Short {
-      setHalfCarry('0')
-      setSubstract('0')
-      setCarry('0')
-      setZero('0')
-      val thirdHL = this.toString(2).padStart(8, '0').get(3)
-      val thirdBC = a.toString(2).padStart(8, '0').get(3)
-      var rthis = (this + a).toShort()
-      val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
-      if (rthis > 0xFF.toShort()) {
-        rthis = (rthis - 0xFF.toShort()).toShort()
-        setCarry('1')
-      }
-      when ("$thirdHL$thirdBC$thirdAfter") {
-        "100", "010", "111", "110" -> setHalfCarry('1')
-      }
-      if (this == 0.toShort()) {
-        setZero('1')
-      }
-      return rthis
+    setHalfCarry('0')
+    setSubstract('0')
+    setCarry('0')
+    setZero('0')
+    val thirdHL = this.toString(2).padStart(8, '0').get(3)
+    val thirdBC = a.toString(2).padStart(8, '0').get(3)
+    var rthis = (this + a).toShort()
+    val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
+    if (rthis > 0xFF.toShort()) {
+      rthis = (rthis - 0xFF.toShort()).toShort()
+      setCarry('1')
+    }
+    when ("$thirdHL$thirdBC$thirdAfter") {
+      "100", "010", "111", "110" -> setHalfCarry('1')
+    }
+    if (this == 0.toShort()) {
+      setZero('1')
+    }
+    return rthis
+  }
+  infix fun Short.ADC(a: Short): Short {
+    val c = if (getCarry() == '1') 1 else 0
+    setHalfCarry('0')
+    setSubstract('0')
+    setCarry('0')
+    setZero('0')
+    val thirdHL = this.toString(2).padStart(8, '0').get(3)
+    val thirdBC = a.toString(2).padStart(8, '0').get(3)
+    var rthis = (this + a + c).toShort()
+    val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
+    if (rthis > 0xFF.toShort()) {
+      rthis = (rthis - 0xFF.toShort()).toShort()
+      setCarry('1')
+    }
+    when ("$thirdHL$thirdBC$thirdAfter") {
+      "100", "010", "111", "110" -> setHalfCarry('1')
+    }
+    if (this == 0.toShort()) {
+      setZero('1')
+    }
+    return rthis
+  }
+  infix fun Short.SUB(a: Short): Short {
+    setHalfCarry('0')
+    setSubstract('0')
+    setCarry('0')
+    setZero('1')
+    val thirdHL = this.toString(2).padStart(8, '0').get(3)
+    val thirdBC = a.toString(2).padStart(8, '0').get(3)
+    var rthis = (this - a).toShort()
+    val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
+    if (rthis < 0.toShort()) {
+      rthis = (0xff.toShort() - rthis).toShort()
+      setCarry('1')
+    }
+    when ("$thirdHL$thirdBC$thirdAfter") {
+      "100", "010", "111", "110" -> setHalfCarry('1')
+    }
+    if (this == 0.toShort()) {
+      setZero('1')
+    }
+    return rthis
+  }
+  infix fun Short.SBC(a: Short): Short {
+    val c = if (getCarry() == '1') 1 else 0
+    setHalfCarry('0')
+    setSubstract('0')
+    setCarry('0')
+    setZero('1')
+    val thirdHL = this.toString(2).padStart(8, '0').get(3)
+    val thirdBC = a.toString(2).padStart(8, '0').get(3)
+    var rthis = (this - a - c).toShort()
+    val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
+    if (rthis < 0.toShort()) {
+      rthis = (0xFF.toShort() - rthis).toShort()
+      setCarry('1')
+    }
+    when ("$thirdHL$thirdBC$thirdAfter") {
+      "100", "010", "111", "110" -> setHalfCarry('1')
+    }
+    if (this == 0.toShort()) {
+      setZero('1')
+    }
+    return rthis
+  }
+  infix fun Short.AND(a: Short): Short {
+    setZero('0')
+    setSubstract('0')
+    setHalfCarry('1')
+    setCarry('0')
+    val ret = (this.toInt() and a.toInt()).toShort()
+    if (ret == 0.toShort()) {
+      setZero('1')
+    }
+    return ret
+  }
+  infix fun Short.XOR(a: Short): Short {
+    setZero('0')
+    setSubstract('0')
+    setHalfCarry('0')
+    setCarry('0')
+    val ret = (this.toInt() xor a.toInt()).toShort()
+    if (ret == 0.toShort()) {
+      setZero('1')
+    }
+    return ret
+  }
+  infix fun Short.OR(a: Short): Short {
+    setZero('0')
+    setSubstract('0')
+    setHalfCarry('0')
+    setCarry('0')
+    val ret = (this.toInt() or a.toInt()).toShort()
+    if (ret == 0.toShort()) {
+      setZero('1')
+    }
+    return ret
   }
   private fun rl(A: Short): Short {
     setZero('0')
@@ -203,7 +302,6 @@ class CPU() {
     ++PC
     return joinHighByteLowByte(a, b)
   }
-  private val stack: HashMap<Int, Int> = HashMap()
   private val opcodes: Map<Int, Function<Unit>> = mapOf(
     0x00 to { println("NOP") }, //NOP
     0x01 to { BC = getNextWord() },
@@ -406,7 +504,160 @@ class CPU() {
     0x84 to { A = (A ADD H) },
     0x85 to { A = (A ADD L) },
     0x86 to { A = (A ADD ram.getByteAt(HL)) },
-    0x87 to { A = (A ADD A) }
+    0x87 to { A = (A ADD A) },
+    0x88 to { A = (A ADC B) },
+    0x89 to { A = (A ADC C) },
+    0x8a to { A = (A ADC D) },
+    0x8b to { A = (A ADC E) },
+    0x8c to { A = (A ADC H) },
+    0x8d to { A = (A ADC L) },
+    0x8e to { A = (A ADC ram.getByteAt(HL)) },
+    0x8f to { A = (A ADC A) },
+    0x90 to { A = (A SUB B) },
+    0x91 to { A = (A SUB C) },
+    0x92 to { A = (A SUB D) },
+    0x93 to { A = (A SUB E) },
+    0x94 to { A = (A SUB H) },
+    0x95 to { A = (A SUB L) },
+    0x96 to { A = (A SUB ram.getByteAt(HL)) },
+    0x97 to { A = (A SUB A) },
+    0x98 to { A = (A SBC B) },
+    0x99 to { A = (A SBC C) },
+    0x9a to { A = (A SBC D) },
+    0x9b to { A = (A SBC E) },
+    0x9c to { A = (A SBC H) },
+    0x9d to { A = (A SBC L) },
+    0x9e to { A = (A SBC ram.getByteAt(HL)) },
+    0x9f to { A = (A SBC A) },
+    0xa0 to { A = (A AND B) },
+    0xa1 to { A = (A AND C) },
+    0xa2 to { A = (A AND D) },
+    0xa3 to { A = (A AND E) },
+    0xa4 to { A = (A AND H) },
+    0xa5 to { A = (A AND L) },
+    0xa6 to { A = (A AND ram.getByteAt(HL)) },
+    0xa7 to { A = (A AND A) },
+    0xa8 to { A = (A XOR B) },
+    0xa9 to { A = (A XOR C) },
+    0xaa to { A = (A XOR D) },
+    0xab to { A = (A XOR E) },
+    0xac to { A = (A XOR H) },
+    0xad to { A = (A XOR L) },
+    0xae to { A = (A XOR ram.getByteAt(HL)) },
+    0xaf to { A = (A XOR A) },
+    0xb0 to { A = (A OR B) },
+    0xb1 to { A = (A OR C) },
+    0xb2 to { A = (A OR D) },
+    0xb3 to { A = (A OR E) },
+    0xb4 to { A = (A OR H) },
+    0xb5 to { A = (A OR L) },
+    0xb6 to { A = (A OR ram.getByteAt(HL)) },
+    0xb7 to { A = (A OR A) },
+    0xb8 to {
+      (A SUB B)
+      Unit
+    },
+    0xb9 to {
+      (A SUB C)
+      Unit
+    },
+    0xba to {
+      (A SUB D)
+      Unit
+    },
+    0xbb to {
+      (A SUB E)
+      Unit
+    },
+    0xbc to {
+      (A SUB H)
+      Unit
+    },
+    0xbd to {
+      (A SUB L)
+      Unit
+    },
+    0xbe to {
+      (A SUB ram.getByteAt(HL))
+      Unit
+    },
+    0xbf to {
+      (A SUB A)
+      Unit
+    },
+    0xc0 to {
+      if (getZero() == '0') {
+        PC = checkNotNull(stack.get(SP))
+        SP = SP + 2
+      }
+    },
+    0xc1 to {
+      BC = checkNotNull(stack.get(SP))
+      stack.remove(SP)
+      SP = SP + 2
+    },
+    0xc2 to {
+      if (getZero() == '0') {
+        PC = getNextWord()
+      }
+    },
+    0xc3 to {
+      PC = getNextWord()
+    },
+    0xc4 to {
+      if (getZero() == '0') {
+        stack.put(SP, PC)
+        SP = SP - 2
+        PC = getNextWord()
+      }
+    },
+    0xc5 to {
+      stack.put(SP, BC)
+      SP = SP - 2
+    },
+    0xc6 to { A = A ADD ram.getByteAt(PC++) },
+    0xc7 to {
+      stack.put(SP, PC)
+      SP = SP - 2
+      PC = 0
+    },
+    0xc8 to {
+      if (getZero() == '1') {
+        PC = checkNotNull(stack.get(SP))
+        SP = SP + 2
+      }
+    },
+    0xc9 to {
+      PC = checkNotNull(stack.get(SP))
+      SP = SP + 2
+    },
+    0xca to {
+      if (getZero() == '1') {
+        PC = getNextWord()
+      }
+    },
+    0xcb to {
+      println("PREFIX")
+    },
+    0xcc to {
+      if (getZero() == '1') {
+        stack.put(SP, PC)
+        SP = SP - 2
+        PC = getNextWord()
+      }
+    },
+    0xcd to {
+      stack.put(SP, PC)
+      SP = SP - 2
+      PC = getNextWord()
+    },
+    0xce to { A = (A ADC ram.getByteAt(PC++)) },
+    0xcf to {
+      stack.put(SP, PC)
+      SP = SP - 2
+      PC = joinHighByteLowByte(0.toShort(), 0x8.toShort())
+    }
+
   )
   fun tick() {
   }
