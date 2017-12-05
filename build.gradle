@@ -20,6 +20,7 @@ dependencies {
 }
 mainClassName='main.MainKt'
 run {
+  standardInput = System.in
   if(System.getProperty("arg")!=null)
     args(System.getProperty("arg"))
 }
