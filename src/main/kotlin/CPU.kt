@@ -9,9 +9,9 @@ class CPU() {
   private var F: Short = 0
   private var H: Short = 0
   private var L: Short = 0
+  private var PCh: Short = 0
+  private var PCl: Short = 0
   private var SP: Int = 0
-  private var PC: Int = 0
-  private val stack: HashMap<Int, Int> = HashMap()
   private var running = true
   private var interrupts = true
   private var prefix = false
@@ -369,6 +369,13 @@ class CPU() {
     return ret.toShort(2)
   }
 
+  private var PC: Int
+    get() = joinHighByteLowByte(PCh, PCl)
+    set(x: Int) {
+      val (nb, nc) = splitHighByteLowByte(x)
+      PCh = nb
+      PCl = nc
+    }
   private var AF: Int
     get() = joinHighByteLowByte(A, F)
     set(x: Int) {
@@ -404,7 +411,7 @@ class CPU() {
     ++PC
     val b = ram.getByteAt(PC)
     ++PC
-    return joinHighByteLowByte(a, b)
+    return joinHighByteLowByte(b, a)
   }
   private val opcodes: Map<Int, ()->Int> = mapOf(
     0x00 to { 4 }, //NOP
@@ -691,7 +698,8 @@ class CPU() {
     0xbf to { (A SUB A); 4 },
     0xc0 to {
       if (getZero() == '0') {
-        PC = checkNotNull(stack.get(SP))
+        PCh = ram.getByteAt(SP)
+        PCl = ram.getByteAt(SP + 1)
         SP = SP + 2
         20
       } else {
@@ -699,8 +707,8 @@ class CPU() {
       }
     },
     0xc1 to {
-      BC = checkNotNull(stack.get(SP))
-      stack.remove(SP)
+      B = ram.getByteAt(SP)
+      C = ram.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
@@ -715,7 +723,8 @@ class CPU() {
     0xc3 to { PC = getNextWord(); 16 },
     0xc4 to {
       if (getZero() == '0') {
-        stack.put(SP, PC)
+        ram.setByteAt(SP - 1, PCh)
+        ram.setByteAt(SP - 2, PCl)
         SP = SP - 2
         PC = getNextWord()
         24
@@ -724,20 +733,23 @@ class CPU() {
       }
     },
     0xc5 to {
-      stack.put(SP, BC)
+      ram.setByteAt(SP - 1, B)
+      ram.setByteAt(SP - 2, C)
       SP = SP - 2
       16
     },
     0xc6 to { A = A ADD ram.getByteAt(PC++); 8 },
     0xc7 to {
-      stack.put(SP, PC)
+      ram.setByteAt(SP - 1, PCh)
+      ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
       PC = 0
       16
     },
     0xc8 to {
       if (getZero() == '1') {
-        PC = checkNotNull(stack.get(SP))
+        PCh = ram.getByteAt(SP)
+        PCl = ram.getByteAt(SP + 1)
         SP = SP + 2
         20
       } else {
@@ -745,7 +757,8 @@ class CPU() {
       }
     },
     0xc9 to {
-      PC = checkNotNull(stack.get(SP))
+      PCh = ram.getByteAt(SP)
+      PCl = ram.getByteAt(SP + 1)
       SP = SP + 2
       16
     },
@@ -760,7 +773,8 @@ class CPU() {
     0xcb to { prefix = true; 4 },
     0xcc to {
       if (getZero() == '1') {
-        stack.put(SP, PC)
+        ram.setByteAt(SP - 1, PCh)
+        ram.setByteAt(SP - 2, PCl)
         SP = SP - 2
         PC = getNextWord()
         24
@@ -769,21 +783,24 @@ class CPU() {
       }
     },
     0xcd to {
-      stack.put(SP, PC)
+      ram.setByteAt(SP - 1, PCh)
+      ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
       PC = getNextWord()
       24
     },
     0xce to { A = (A ADC ram.getByteAt(PC++)); 8 },
     0xcf to {
-      stack.put(SP, PC)
+      ram.setByteAt(SP - 1, PCh)
+      ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
       PC = joinHighByteLowByte(0.toShort(), 0x8.toShort())
       16
     },
     0xd0 to {
       if (getCarry() == '0') {
-        PC = checkNotNull(stack.get(SP))
+        PCh = ram.getByteAt(SP)
+        PCl = ram.getByteAt(SP + 1)
         SP = SP + 2
         20
       } else {
@@ -791,8 +808,8 @@ class CPU() {
       }
     },
     0xd1 to {
-      DE = checkNotNull(stack.get(SP))
-      stack.remove(SP)
+      D = ram.getByteAt(SP)
+      E = ram.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
@@ -806,7 +823,8 @@ class CPU() {
     },
     0xd4 to {
       if (getCarry() == '0') {
-        stack.put(SP, PC)
+        ram.setByteAt(SP - 1, PCh)
+        ram.setByteAt(SP - 2, PCl)
         SP = SP - 2
         PC = getNextWord()
         24
@@ -815,20 +833,23 @@ class CPU() {
       }
     },
     0xd5 to {
-      stack.put(SP, DE)
+      ram.setByteAt(SP - 1, D)
+      ram.setByteAt(SP - 2, E)
       SP = SP - 2
       16
     },
     0xd6 to { A = A SUB ram.getByteAt(PC++); 8 },
     0xd7 to {
-      stack.put(SP, PC)
+      ram.setByteAt(SP - 1, PCh)
+      ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
       PC = joinHighByteLowByte(0.toShort(), 0x10.toShort())
       16
     },
     0xd8 to {
       if (getCarry() == '1') {
-        PC = checkNotNull(stack.get(SP))
+        PCh = ram.getByteAt(SP)
+        PCl = ram.getByteAt(SP + 1)
         SP = SP + 2
         20
       } else {
@@ -837,7 +858,8 @@ class CPU() {
     },
     0xd9 to {
       interrupts = true
-      PC = checkNotNull(stack.get(SP))
+      PCh = ram.getByteAt(SP)
+      PCl = ram.getByteAt(SP + 1)
       SP = SP + 2
       16
     },
@@ -851,7 +873,8 @@ class CPU() {
     },
     0xdc to {
       if (getCarry() == '1') {
-        stack.put(SP, PC)
+        ram.setByteAt(SP - 1, PCh)
+        ram.setByteAt(SP - 2, PCl)
         SP = SP - 2
         PC = getNextWord()
         24
@@ -861,27 +884,30 @@ class CPU() {
     },
     0xde to { A = (A SBC ram.getByteAt(PC++)); 8 },
     0xdf to {
-      stack.put(SP, PC)
+      ram.setByteAt(SP - 1, PCh)
+      ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
       PC = joinHighByteLowByte(0.toShort(), 0x18.toShort())
       16
     },
     0xe0 to { ram.setByteAt(0x0000FF00 + ram.getByteAt(PC++).toInt(), A); 12 },
     0xe1 to {
-      HL = checkNotNull(stack.get(SP))
-      stack.remove(SP)
+      H = ram.getByteAt(SP)
+      L = ram.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
     0xe2 to { ram.setByteAt(0x0000FF00 + C.toInt(), A); 8 },
     0xe5 to {
-      stack.put(SP, HL)
+      ram.setByteAt(SP - 1, H)
+      ram.setByteAt(SP - 2, L)
       SP = SP - 2
       16
     },
     0xe6 to { A = A AND ram.getByteAt(PC++); 8 },
     0xe7 to {
-      stack.put(SP, PC)
+      ram.setByteAt(SP - 1, PCh)
+      ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
       PC = joinHighByteLowByte(0.toShort(), 0x20.toShort())
       16
@@ -891,28 +917,31 @@ class CPU() {
     0xea to { ram.setByteAt(getNextWord(), A); 16 },
     0xee to { A = (A XOR ram.getByteAt(PC++)); 8 },
     0xef to {
-      stack.put(SP, PC)
+      ram.setByteAt(SP - 1, PCh)
+      ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
       PC = joinHighByteLowByte(0.toShort(), 0x28.toShort())
       16
     },
     0xf0 to { A = ram.getByteAt(0x0000FF00 + ram.getByteAt(PC++).toInt()); 12 },
     0xf1 to {
-      AF = checkNotNull(stack.get(SP))
-      stack.remove(SP)
+      A = ram.getByteAt(SP)
+      F = ram.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
     0xf2 to { A = ram.getByteAt(0x0000FF00 + C.toInt()); 8 },
     0xf3 to { interrupts = false; 4 },
     0xf5 to {
-      stack.put(SP, AF)
+      ram.setByteAt(SP - 1, A)
+      ram.setByteAt(SP - 2, F)
       SP = SP - 2
       16
     },
     0xf6 to { A = A OR ram.getByteAt(PC++); 8 },
     0xf7 to {
-      stack.put(SP, PC)
+      ram.setByteAt(SP - 1, PCh)
+      ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
       PC = joinHighByteLowByte(0.toShort(), 0x30.toShort())
       16
@@ -923,7 +952,8 @@ class CPU() {
     0xfb to { interrupts = true; 4 },
     0xfe to { A SUB ram.getByteAt(PC++); 8 },
     0xff to {
-      stack.put(SP, PC)
+      ram.setByteAt(SP - 1, PCh)
+      ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
       PC = joinHighByteLowByte(0.toShort(), 0x38.toShort())
       16
@@ -1198,7 +1228,6 @@ HL: ${HL.toString(16).padStart(4, '0')} = $HL
 Running: $running
 Int: $interrupts
 Prefif: $prefix
-Stacksize: ${stack.size}
 CurrOp: ${ram.getByteAt(PC).toString(16).padStart(2, '0')}
 """
 
