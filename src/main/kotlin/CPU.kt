@@ -62,20 +62,20 @@ class CPU() {
       setZero('0')
       setHalfCarry('0')
       setSubstract('0')
-      val fourth = this.toString(2).get(4)
+      val fourth = this.toString(2).padStart(8, '0').get(4)
       var rthis = (this + 1).toShort()
       if (rthis > 255.toShort() || rthis == 0.toShort()) {
         rthis = 0.toShort()
         setZero('1')
       }
-      val fourthAfter = rthis.toString(2).get(4)
+      val fourthAfter = rthis.toString(2).padStart(8, '0').get(4)
       if (fourth != fourthAfter) {
         setHalfCarry('1')
       }
       return rthis
   }
   fun Short.DEC(): Short {
-    val fourth = this.toString(2).get(4)
+    val fourth = this.toString(2).padStart(8, '0').get(4)
     var rthis = (this - 1).toShort()
     setZero('0')
     setHalfCarry('0')
@@ -85,7 +85,7 @@ class CPU() {
     if (rthis == 0.toShort()) {
       setZero('1')
     }
-    val fourthAfter = rthis.toString(2).get(4)
+    val fourthAfter = rthis.toString(2).padStart(8, '0').get(4)
     if (fourthAfter != fourth) {
       setHalfCarry('1')
     }
@@ -456,9 +456,10 @@ class CPU() {
     0x1f to { A = rr(A); 4 },
     0x20 to { //JR NZ,d8
       if (getZero() == '0') {
-        PC = PC + ram.getByteAt(PC).toByte().toInt()
+        PC = PC + ram.getByteAt(PC).toByte().toInt() + 1
         12
       } else {
+        PC++
         8
       }
     },
@@ -698,8 +699,8 @@ class CPU() {
     0xbf to { (A SUB A); 4 },
     0xc0 to {
       if (getZero() == '0') {
-        PCh = ram.getByteAt(SP)
-        PCl = ram.getByteAt(SP + 1)
+        PCl = ram.getByteAt(SP)
+        PCh = ram.getByteAt(SP + 1)
         SP = SP + 2
         20
       } else {
@@ -707,8 +708,8 @@ class CPU() {
       }
     },
     0xc1 to {
-      B = ram.getByteAt(SP)
-      C = ram.getByteAt(SP + 1)
+      C = ram.getByteAt(SP)
+      B = ram.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
@@ -748,8 +749,8 @@ class CPU() {
     },
     0xc8 to {
       if (getZero() == '1') {
-        PCh = ram.getByteAt(SP)
-        PCl = ram.getByteAt(SP + 1)
+        PCl = ram.getByteAt(SP)
+        PCh = ram.getByteAt(SP + 1)
         SP = SP + 2
         20
       } else {
@@ -757,8 +758,8 @@ class CPU() {
       }
     },
     0xc9 to {
-      PCh = ram.getByteAt(SP)
-      PCl = ram.getByteAt(SP + 1)
+      PCl = ram.getByteAt(SP)
+      PCh = ram.getByteAt(SP + 1)
       SP = SP + 2
       16
     },
@@ -799,8 +800,8 @@ class CPU() {
     },
     0xd0 to {
       if (getCarry() == '0') {
-        PCh = ram.getByteAt(SP)
-        PCl = ram.getByteAt(SP + 1)
+        PCl = ram.getByteAt(SP)
+        PCh = ram.getByteAt(SP + 1)
         SP = SP + 2
         20
       } else {
@@ -808,8 +809,8 @@ class CPU() {
       }
     },
     0xd1 to {
-      D = ram.getByteAt(SP)
-      E = ram.getByteAt(SP + 1)
+      E = ram.getByteAt(SP)
+      D = ram.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
@@ -848,8 +849,8 @@ class CPU() {
     },
     0xd8 to {
       if (getCarry() == '1') {
-        PCh = ram.getByteAt(SP)
-        PCl = ram.getByteAt(SP + 1)
+        PCl = ram.getByteAt(SP)
+        PCh = ram.getByteAt(SP + 1)
         SP = SP + 2
         20
       } else {
@@ -858,8 +859,8 @@ class CPU() {
     },
     0xd9 to {
       interrupts = true
-      PCh = ram.getByteAt(SP)
-      PCl = ram.getByteAt(SP + 1)
+      PCl = ram.getByteAt(SP)
+      PCh = ram.getByteAt(SP + 1)
       SP = SP + 2
       16
     },
@@ -892,8 +893,8 @@ class CPU() {
     },
     0xe0 to { ram.setByteAt(0x0000FF00 + ram.getByteAt(PC++).toInt(), A); 12 },
     0xe1 to {
-      H = ram.getByteAt(SP)
-      L = ram.getByteAt(SP + 1)
+      L = ram.getByteAt(SP)
+      H = ram.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
@@ -925,8 +926,8 @@ class CPU() {
     },
     0xf0 to { A = ram.getByteAt(0x0000FF00 + ram.getByteAt(PC++).toInt()); 12 },
     0xf1 to {
-      A = ram.getByteAt(SP)
-      F = ram.getByteAt(SP + 1)
+      F = ram.getByteAt(SP)
+      A = ram.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
@@ -1225,6 +1226,7 @@ A: ${A.toString(16)} B: ${B.toString(16)} C: ${C.toString(16)} D: ${D.toString(1
 E: ${E.toString(16)} H: ${H.toString(16)} L: ${L.toString(16)}
 F: ${F.toString(2).padStart(8, '0')}
 HL: ${HL.toString(16).padStart(4, '0')} = $HL
+BC: ${BC.toString(16)}
 Running: $running
 Int: $interrupts
 Prefif: $prefix
