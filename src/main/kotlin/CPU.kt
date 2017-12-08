@@ -354,18 +354,20 @@ class CPU() {
   }
 
   private fun BIT(A: Short, c: Int): Char {
+    setHalfCarry('1')
+    setSubstract('0')
     val a = A.toString(2).padStart(8, '0')
-    val ret = if (a.get(c) == '1') '0' else '1'
+    val ret = if (a.get(7 - c) == '1') '0' else '1'
     return ret
   }
   private fun SET(A: Short, c: Int): Short {
     val a = A.toString(2).padStart(8, '0')
-    val ret = a.substring(0, c) + '1' + a.substring(c)
+    val ret = a.substring(0, 7 - c) + '1' + a.substring(c)
     return ret.toShort(2)
   }
   private fun RES(A: Short, c: Int): Short {
     val a = A.toString(2).padStart(8, '0')
-    val ret = a.substring(0, c) + '1' + a.substring(c)
+    val ret = a.substring(0, 7 - c) + '1' + a.substring(c)
     return ret.toShort(2)
   }
 
@@ -446,7 +448,7 @@ class CPU() {
     0x15 to { D = D.DEC(); 4 }, //dec d
     0x16 to { D = ram.getByteAt(PC++); 8 }, //ld D,d8
     0x17 to { A = rl(A); 4 }, //rla
-    0x18 to { PC = PC + ram.getByteAt(PC).toByte().toInt(); 12 }, //JR r8
+    0x18 to { PC = PC + ram.getByteAt(PC).toByte().toInt() + 1; 12 }, //JR r8
     0x19 to { HL = (HL ADD DE); 8 }, // ADD HL,DE
     0x1a to { A = ram.getByteAt(DE); 8 }, //ld A,(DE)
     0x1b to { DE = DE.DEC(); 8 },
@@ -495,9 +497,10 @@ class CPU() {
     },
     0x28 to { // JP Z, a8
       if (getZero() == '1') {
-        PC = PC + ram.getByteAt(PC).toByte().toInt()
+        PC = PC + ram.getByteAt(PC).toByte().toInt() + 1
         16
       } else {
+        PC++
         12
       }
     },
@@ -520,9 +523,10 @@ class CPU() {
     },
     0x30 to {
       if (getCarry() == '0') {
-        PC = PC + ram.getByteAt(PC).toByte().toInt()
+        PC = PC + ram.getByteAt(PC).toByte().toInt() + 1
         12
       } else {
+        PC++
         8
       }
     },
@@ -544,7 +548,7 @@ class CPU() {
     },
     0x38 to {
       if (getCarry() == '1') {
-        PC = PC + ram.getByteAt(PC)
+        PC = PC + ram.getByteAt(PC) + 1
         12
       }
       8
@@ -704,6 +708,7 @@ class CPU() {
         SP = SP + 2
         20
       } else {
+        PC++
         8
       }
     },
@@ -718,18 +723,21 @@ class CPU() {
         PC = getNextWord()
         16
       } else {
+        PC = PC + 2
         12
       }
     },
     0xc3 to { PC = getNextWord(); 16 },
     0xc4 to {
       if (getZero() == '0') {
+        val nextPC = getNextWord()
         ram.setByteAt(SP - 1, PCh)
         ram.setByteAt(SP - 2, PCl)
         SP = SP - 2
-        PC = getNextWord()
+        PC = nextPC
         24
       } else {
+        PC = PC + 2
         12
       }
     },
@@ -754,6 +762,7 @@ class CPU() {
         SP = SP + 2
         20
       } else {
+        PC++
         8
       }
     },
@@ -768,26 +777,30 @@ class CPU() {
         PC = getNextWord()
         16
       } else {
+        PC = PC + 2
         12
       }
     },
     0xcb to { prefix = true; 4 },
     0xcc to {
       if (getZero() == '1') {
+        val nextPC = getNextWord()
         ram.setByteAt(SP - 1, PCh)
         ram.setByteAt(SP - 2, PCl)
         SP = SP - 2
-        PC = getNextWord()
+        PC = nextPC
         24
       } else {
+        PC = PC + 2
         12
       }
     },
     0xcd to {
+      val nextPC = getNextWord()
       ram.setByteAt(SP - 1, PCh)
       ram.setByteAt(SP - 2, PCl)
       SP = SP - 2
-      PC = getNextWord()
+      PC = nextPC
       24
     },
     0xce to { A = (A ADC ram.getByteAt(PC++)); 8 },
@@ -805,6 +818,7 @@ class CPU() {
         SP = SP + 2
         20
       } else {
+        PC++
         8
       }
     },
@@ -819,17 +833,20 @@ class CPU() {
         PC = getNextWord()
         16
       } else {
+        PC = PC + 2
         12
       }
     },
     0xd4 to {
       if (getCarry() == '0') {
+        val nextPC = getNextWord()
         ram.setByteAt(SP - 1, PCh)
         ram.setByteAt(SP - 2, PCl)
         SP = SP - 2
-        PC = getNextWord()
+        PC = nextPC
         24
       } else {
+        PC = PC + 2
         12
       }
     },
@@ -854,6 +871,7 @@ class CPU() {
         SP = SP + 2
         20
       } else {
+        PC++
         8
       }
     },
@@ -869,17 +887,20 @@ class CPU() {
         PC = getNextWord()
         16
       } else {
+        PC = PC + 2
         12
       }
     },
     0xdc to {
       if (getCarry() == '1') {
+        val nextPC = getNextWord()
         ram.setByteAt(SP - 1, PCh)
         ram.setByteAt(SP - 2, PCl)
         SP = SP - 2
-        PC = getNextWord()
+        PC = nextPC
         24
       } else {
+        PC = PC + 2
         12
       }
     },
@@ -1229,7 +1250,7 @@ HL: ${HL.toString(16).padStart(4, '0')} = $HL
 BC: ${BC.toString(16)}
 Running: $running
 Int: $interrupts
-Prefif: $prefix
+Prefix: $prefix
 CurrOp: ${ram.getByteAt(PC).toString(16).padStart(2, '0')}
 """
 
