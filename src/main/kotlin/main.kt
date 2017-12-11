@@ -14,15 +14,15 @@ fun java.io.File.toShortList(): List<Short> =
   })
 fun main(args: Array<String>) {
   val cpu = CPU()
-  val rom = java.io.File(CPU::class.java.getResource("dmg_boot.bin").toURI())
-  println(rom.readBytes().map({ it.toChar().toInt().toString(16).padStart(4, '0').substring(2) }).reduce({
-    a, b -> a + b
-  }))
+  val bios = java.io.File(CPU::class.java.getResource("dmg_boot.bin").toURI())
+  val rom = java.io.File(CPU::class.java.getResource("Tetris.gb").toURI())
   cpu.ram.load(0, rom.toShortList())
-  cpu.ram.load(0xC000, rom.toShortList())
+  cpu.ram.load(0, bios.toShortList())
   while (true) {
-    println(cpu)
-    readLine()
+    if (cpu.PC > 0x1d) {
+      println(cpu)
+      readLine()
+    }
     cpu.tick()
   }
 }

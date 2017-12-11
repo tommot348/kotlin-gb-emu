@@ -371,7 +371,7 @@ class CPU() {
     return ret.toShort(2)
   }
 
-  private var PC: Int
+  var PC: Int
     get() = joinHighByteLowByte(PCh, PCl)
     set(x: Int) {
       val (nb, nc) = splitHighByteLowByte(x)
