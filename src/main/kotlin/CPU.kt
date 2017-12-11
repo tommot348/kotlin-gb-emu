@@ -243,14 +243,14 @@ class CPU() {
     }
     return ret
   }
-  private fun rl(A: Short): Short {
+  private fun rl(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
-    val a = A.toString(2).padStart(8, '0')
+    val an = a.toString(2).padStart(8, '0')
     val c = getCarry()
-    setCarry(a.first())
-    val ret = (a.substring(1) + c).toShort(2)
+    setCarry(an.first())
+    val ret = (an.substring(1) + c).toShort(2)
     if (prefix) {
       if (ret.toInt() == 0) {
         setZero('1')
@@ -258,13 +258,13 @@ class CPU() {
     }
     return ret
   }
-  private fun rlc(A: Short): Short {
+  private fun rlc(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
-    val a = A.toString(2).padStart(8, '0')
-    setCarry(a.first())
-    val ret = (a.substring(1) + a.first()).toShort(2)
+    val an = a.toString(2).padStart(8, '0')
+    setCarry(an.first())
+    val ret = (an.substring(1) + an.first()).toShort(2)
     if (prefix) {
       if (ret.toInt() == 0) {
         setZero('1')
@@ -273,14 +273,14 @@ class CPU() {
     return ret
   }
 
-  private fun rr(A: Short): Short {
+  private fun rr(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
-    val a = A.toString(2).padStart(8, '0')
+    val an = a.toString(2).padStart(8, '0')
     val c = getCarry()
-    setCarry(a.last())
-    val ret = (c + a.substring(1)).toShort(2)
+    setCarry(an.last())
+    val ret = (c + an.substring(1)).toShort(2)
     if (prefix) {
       if (ret.toInt() == 0) {
         setZero('1')
@@ -288,13 +288,13 @@ class CPU() {
     }
     return ret
   }
-  private fun rrc(A: Short): Short {
+  private fun rrc(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
-    val a = A.toString(2).padStart(8, '0')
-    setCarry(a.last())
-    val ret = (a.last() + a.substring(0, a.length - 1)).toShort(2)
+    val an = a.toString(2).padStart(8, '0')
+    setCarry(an.last())
+    val ret = (an.last() + an.substring(0, an.length - 1)).toShort(2)
     if (prefix) {
       if (ret.toInt() == 0) {
         setZero('1')
@@ -303,71 +303,71 @@ class CPU() {
     return ret
   }
 
-  private fun sla(A: Short): Short {
+  private fun sla(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
-    val a = A.toString(2).padStart(8, '0')
-    setCarry(a.first())
-    val ret = (a.substring(1) + "0").toShort(2)
+    val an = a.toString(2).padStart(8, '0')
+    setCarry(an.first())
+    val ret = (an.substring(1) + "0").toShort(2)
     if (ret.toInt() == 0) {
       setZero('1')
     }
     return ret
   }
-  private fun sra(A: Short): Short {
+  private fun sra(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
-    val a = A.toString(2).padStart(8, '0')
-    setCarry(a.last())
-    val ret = (a.first() + a.substring(0, a.length - 1)).toShort(2)
+    val an = a.toString(2).padStart(8, '0')
+    setCarry(an.last())
+    val ret = (an.first() + an.substring(0, an.length - 1)).toShort(2)
     if (ret.toInt() == 0) {
       setZero('1')
     }
     return ret
   }
-  private fun srl(A: Short): Short {
+  private fun srl(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
-    val a = A.toString(2).padStart(8, '0')
-    setCarry(a.last())
-    val ret = ('0' + a.substring(0, a.length - 1)).toShort(2)
+    val an = a.toString(2).padStart(8, '0')
+    setCarry(an.last())
+    val ret = ('0' + an.substring(0, an.length - 1)).toShort(2)
     if (ret.toInt() == 0) {
       setZero('1')
     }
     return ret
   }
 
-  private fun swap(A: Short): Short {
+  private fun swap(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
     setCarry('0')
-    val a = A.toString(2).padStart(8, '0')
-    val ret = (a.substring(4) + a.substring(0, 4)).toShort(2)
+    val an = a.toString(2).padStart(8, '0')
+    val ret = (an.substring(4) + an.substring(0, 4)).toShort(2)
     if (ret.toInt() == 0) {
       setZero('1')
     }
     return ret
   }
 
-  private fun BIT(A: Short, c: Int): Char {
+  private fun BIT(a: Short, c: Int): Char {
     setHalfCarry('1')
     setSubstract('0')
-    val a = A.toString(2).padStart(8, '0')
-    val ret = if (a.get(7 - c) == '1') '0' else '1'
+    val an = a.toString(2).padStart(8, '0').get(7 - c)
+    val ret = if (an == '1') '0' else '1'
     return ret
   }
-  private fun SET(A: Short, c: Int): Short {
-    val a = A.toString(2).padStart(8, '0')
-    val ret = a.substring(0, 7 - c) + '1' + a.substring(c)
+  private fun SET(a: Short, c: Int): Short {
+    val an = a.toString(2).padStart(8, '0')
+    val ret = an.substring(0, 7 - c) + '1' + an.substring(c)
     return ret.toShort(2)
   }
-  private fun RES(A: Short, c: Int): Short {
-    val a = A.toString(2).padStart(8, '0')
-    val ret = a.substring(0, 7 - c) + '1' + a.substring(c)
+  private fun RES(a: Short, c: Int): Short {
+    val an = a.toString(2).padStart(8, '0')
+    val ret = an.substring(0, 7 - c) + '1' + an.substring(c)
     return ret.toShort(2)
   }
 
@@ -1055,11 +1055,11 @@ class CPU() {
     0x46 to { setZero(BIT(ram.getByteAt(HL), 0)); 12 },
     0x47 to { setZero(BIT(A, 0)); 8 },
     0x48 to { setZero(BIT(B, 1)); 8 },
-    0x49 to { setZero(BIT(B, 1)); 8 },
-    0x4a to { setZero(BIT(B, 1)); 8 },
-    0x4b to { setZero(BIT(B, 1)); 8 },
-    0x4c to { setZero(BIT(B, 1)); 8 },
-    0x4d to { setZero(BIT(B, 1)); 8 },
+    0x49 to { setZero(BIT(C, 1)); 8 },
+    0x4a to { setZero(BIT(D, 1)); 8 },
+    0x4b to { setZero(BIT(E, 1)); 8 },
+    0x4c to { setZero(BIT(H, 1)); 8 },
+    0x4d to { setZero(BIT(L, 1)); 8 },
     0x4e to { setZero(BIT(ram.getByteAt(HL), 1)); 12 },
     0x4f to { setZero(BIT(A, 1)); 8 },
     0x50 to { setZero(BIT(B, 2)); 8 },
@@ -1071,11 +1071,11 @@ class CPU() {
     0x56 to { setZero(BIT(ram.getByteAt(HL), 2)); 12 },
     0x57 to { setZero(BIT(A, 2)); 8 },
     0x58 to { setZero(BIT(B, 3)); 8 },
-    0x59 to { setZero(BIT(B, 3)); 8 },
-    0x5a to { setZero(BIT(B, 3)); 8 },
-    0x5b to { setZero(BIT(B, 3)); 8 },
-    0x5c to { setZero(BIT(B, 3)); 8 },
-    0x5d to { setZero(BIT(B, 3)); 8 },
+    0x59 to { setZero(BIT(C, 3)); 8 },
+    0x5a to { setZero(BIT(D, 3)); 8 },
+    0x5b to { setZero(BIT(E, 3)); 8 },
+    0x5c to { setZero(BIT(H, 3)); 8 },
+    0x5d to { setZero(BIT(L, 3)); 8 },
     0x5e to { setZero(BIT(ram.getByteAt(HL), 3)); 12 },
     0x5f to { setZero(BIT(A, 3)); 8 },
     0x60 to { setZero(BIT(B, 4)); 8 },
@@ -1087,11 +1087,11 @@ class CPU() {
     0x66 to { setZero(BIT(ram.getByteAt(HL), 4)); 12 },
     0x67 to { setZero(BIT(A, 4)); 8 },
     0x68 to { setZero(BIT(B, 5)); 8 },
-    0x69 to { setZero(BIT(B, 5)); 8 },
-    0x6a to { setZero(BIT(B, 5)); 8 },
-    0x6b to { setZero(BIT(B, 5)); 8 },
-    0x6c to { setZero(BIT(B, 5)); 8 },
-    0x6d to { setZero(BIT(B, 5)); 8 },
+    0x69 to { setZero(BIT(C, 5)); 8 },
+    0x6a to { setZero(BIT(D, 5)); 8 },
+    0x6b to { setZero(BIT(E, 5)); 8 },
+    0x6c to { setZero(BIT(H, 5)); 8 },
+    0x6d to { setZero(BIT(L, 5)); 8 },
     0x6e to { setZero(BIT(ram.getByteAt(HL), 5)); 12 },
     0x6f to { setZero(BIT(A, 5)); 8 },
     0x70 to { setZero(BIT(B, 6)); 8 },
@@ -1103,11 +1103,11 @@ class CPU() {
     0x76 to { setZero(BIT(ram.getByteAt(HL), 6)); 12 },
     0x77 to { setZero(BIT(A, 6)); 8 },
     0x78 to { setZero(BIT(B, 7)); 8 },
-    0x79 to { setZero(BIT(B, 7)); 8 },
-    0x7a to { setZero(BIT(B, 7)); 8 },
-    0x7b to { setZero(BIT(B, 7)); 8 },
-    0x7c to { setZero(BIT(B, 7)); 8 },
-    0x7d to { setZero(BIT(B, 7)); 8 },
+    0x79 to { setZero(BIT(C, 7)); 8 },
+    0x7a to { setZero(BIT(D, 7)); 8 },
+    0x7b to { setZero(BIT(E, 7)); 8 },
+    0x7c to { setZero(BIT(H, 7)); 8 },
+    0x7d to { setZero(BIT(L, 7)); 8 },
     0x7e to { setZero(BIT(ram.getByteAt(HL), 7)); 12 },
     0x7f to { setZero(BIT(A, 7)); 8 },
     0x80 to { B = RES(B, 0); 8 },
@@ -1119,11 +1119,11 @@ class CPU() {
     0x86 to { ram.setByteAt(HL, RES(ram.getByteAt(HL), 0)); 16 },
     0x87 to { A = RES(A, 0); 8 },
     0x88 to { B = RES(B, 1); 8 },
-    0x89 to { C = RES(B, 1); 8 },
-    0x8a to { D = RES(B, 1); 8 },
-    0x8b to { E = RES(B, 1); 8 },
-    0x8c to { H = RES(B, 1); 8 },
-    0x8d to { L = RES(B, 1); 8 },
+    0x89 to { C = RES(C, 1); 8 },
+    0x8a to { D = RES(D, 1); 8 },
+    0x8b to { E = RES(E, 1); 8 },
+    0x8c to { H = RES(H, 1); 8 },
+    0x8d to { L = RES(L, 1); 8 },
     0x8e to { ram.setByteAt(HL, RES(ram.getByteAt(HL), 1)); 16 },
     0x8f to { A = RES(A, 1); 8 },
     0x90 to { B = RES(B, 2); 8 },
@@ -1135,11 +1135,11 @@ class CPU() {
     0x96 to { ram.setByteAt(HL, RES(ram.getByteAt(HL), 2)); 16 },
     0x97 to { A = RES(A, 2); 8 },
     0x98 to { B = RES(B, 3); 8 },
-    0x99 to { C = RES(B, 3); 8 },
-    0x9a to { D = RES(B, 3); 8 },
-    0x9b to { E = RES(B, 3); 8 },
-    0x9c to { H = RES(B, 3); 8 },
-    0x9d to { L = RES(B, 3); 8 },
+    0x99 to { C = RES(C, 3); 8 },
+    0x9a to { D = RES(D, 3); 8 },
+    0x9b to { E = RES(E, 3); 8 },
+    0x9c to { H = RES(H, 3); 8 },
+    0x9d to { L = RES(L, 3); 8 },
     0x9e to { ram.setByteAt(HL, RES(ram.getByteAt(HL), 3)); 16 },
     0x9f to { A = RES(A, 3); 8 },
     0xa0 to { B = RES(B, 4); 8 },
@@ -1151,11 +1151,11 @@ class CPU() {
     0xa6 to { ram.setByteAt(HL, RES(ram.getByteAt(HL), 4)); 16 },
     0xa7 to { A = RES(A, 4); 8 },
     0xa8 to { B = RES(B, 5); 8 },
-    0xa9 to { C = RES(B, 5); 8 },
-    0xaa to { D = RES(B, 5); 8 },
-    0xab to { E = RES(B, 5); 8 },
-    0xac to { H = RES(B, 5); 8 },
-    0xad to { L = RES(B, 5); 8 },
+    0xa9 to { C = RES(C, 5); 8 },
+    0xaa to { D = RES(D, 5); 8 },
+    0xab to { E = RES(E, 5); 8 },
+    0xac to { H = RES(H, 5); 8 },
+    0xad to { L = RES(L, 5); 8 },
     0xae to { ram.setByteAt(HL, RES(ram.getByteAt(HL), 5)); 16 },
     0xaf to { A = RES(A, 5); 8 },
     0xb0 to { B = RES(B, 6); 8 },
@@ -1167,11 +1167,11 @@ class CPU() {
     0xb6 to { ram.setByteAt(HL, RES(ram.getByteAt(HL), 6)); 16 },
     0xb7 to { A = RES(A, 6); 8 },
     0xb8 to { B = RES(B, 7); 8 },
-    0xb9 to { C = RES(B, 7); 8 },
-    0xba to { D = RES(B, 7); 8 },
-    0xbb to { E = RES(B, 7); 8 },
-    0xbc to { H = RES(B, 7); 8 },
-    0xbd to { L = RES(B, 7); 8 },
+    0xb9 to { C = RES(C, 7); 8 },
+    0xba to { D = RES(D, 7); 8 },
+    0xbb to { E = RES(E, 7); 8 },
+    0xbc to { H = RES(H, 7); 8 },
+    0xbd to { L = RES(L, 7); 8 },
     0xbe to { ram.setByteAt(HL, RES(ram.getByteAt(HL), 7)); 16 },
     0xbf to { A = RES(A, 7); 8 },
     0xc0 to { B = SET(B, 0); 8 },
@@ -1183,11 +1183,11 @@ class CPU() {
     0xc6 to { ram.setByteAt(HL, SET(ram.getByteAt(HL), 0)); 16 },
     0xc7 to { A = SET(A, 0); 8 },
     0xc8 to { B = SET(B, 1); 8 },
-    0xc9 to { C = SET(B, 1); 8 },
-    0xca to { D = SET(B, 1); 8 },
-    0xcb to { E = SET(B, 1); 8 },
-    0xcc to { H = SET(B, 1); 8 },
-    0xcd to { L = SET(B, 1); 8 },
+    0xc9 to { C = SET(C, 1); 8 },
+    0xca to { D = SET(D, 1); 8 },
+    0xcb to { E = SET(E, 1); 8 },
+    0xcc to { H = SET(H, 1); 8 },
+    0xcd to { L = SET(L, 1); 8 },
     0xce to { ram.setByteAt(HL, SET(ram.getByteAt(HL), 1)); 16 },
     0xcf to { A = SET(A, 1); 8 },
     0xd0 to { B = SET(B, 2); 8 },
@@ -1199,11 +1199,11 @@ class CPU() {
     0xd6 to { ram.setByteAt(HL, SET(ram.getByteAt(HL), 2)); 16 },
     0xd7 to { A = SET(A, 2); 8 },
     0xd8 to { B = SET(B, 3); 8 },
-    0xd9 to { C = SET(B, 3); 8 },
-    0xda to { D = SET(B, 3); 8 },
-    0xdb to { E = SET(B, 3); 8 },
-    0xdc to { H = SET(B, 3); 8 },
-    0xdd to { L = SET(B, 3); 8 },
+    0xd9 to { C = SET(C, 3); 8 },
+    0xda to { D = SET(D, 3); 8 },
+    0xdb to { E = SET(E, 3); 8 },
+    0xdc to { H = SET(H, 3); 8 },
+    0xdd to { L = SET(L, 3); 8 },
     0xde to { ram.setByteAt(HL, SET(ram.getByteAt(HL), 3)); 16 },
     0xdf to { A = SET(A, 3); 8 },
     0xe0 to { B = SET(B, 4); 8 },
@@ -1215,11 +1215,11 @@ class CPU() {
     0xe6 to { ram.setByteAt(HL, SET(ram.getByteAt(HL), 4)); 16 },
     0xe7 to { A = SET(A, 4); 8 },
     0xe8 to { B = SET(B, 5); 8 },
-    0xe9 to { C = SET(B, 5); 8 },
-    0xea to { D = SET(B, 5); 8 },
-    0xeb to { E = SET(B, 5); 8 },
-    0xec to { H = SET(B, 5); 8 },
-    0xed to { L = SET(B, 5); 8 },
+    0xe9 to { C = SET(C, 5); 8 },
+    0xea to { D = SET(D, 5); 8 },
+    0xeb to { E = SET(E, 5); 8 },
+    0xec to { H = SET(H, 5); 8 },
+    0xed to { L = SET(L, 5); 8 },
     0xee to { ram.setByteAt(HL, SET(ram.getByteAt(HL), 5)); 16 },
     0xef to { A = SET(A, 5); 8 },
     0xf0 to { B = SET(B, 6); 8 },
@@ -1231,11 +1231,11 @@ class CPU() {
     0xf6 to { ram.setByteAt(HL, SET(ram.getByteAt(HL), 6)); 16 },
     0xf7 to { A = SET(A, 6); 8 },
     0xf8 to { B = SET(B, 7); 8 },
-    0xf9 to { C = SET(B, 7); 8 },
-    0xfa to { D = SET(B, 7); 8 },
-    0xfb to { E = SET(B, 7); 8 },
-    0xfc to { H = SET(B, 7); 8 },
-    0xfd to { L = SET(B, 7); 8 },
+    0xf9 to { C = SET(C, 7); 8 },
+    0xfa to { D = SET(D, 7); 8 },
+    0xfb to { E = SET(E, 7); 8 },
+    0xfc to { H = SET(H, 7); 8 },
+    0xfd to { L = SET(L, 7); 8 },
     0xfe to { ram.setByteAt(HL, SET(ram.getByteAt(HL), 7)); 16 },
     0xff to { A = SET(A, 7); 8 }
   )

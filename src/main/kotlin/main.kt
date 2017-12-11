@@ -19,6 +19,7 @@ fun main(args: Array<String>) {
     a, b -> a + b
   }))
   cpu.ram.load(0, rom.toShortList())
+  cpu.ram.load(0xC000, rom.toShortList())
   while (true) {
     println(cpu)
     readLine()
