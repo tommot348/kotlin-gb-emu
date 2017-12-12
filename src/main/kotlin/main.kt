@@ -1,6 +1,8 @@
 package main
 
 import de.prt.gb.CPU
+import de.prt.gb.RAM
+import de.prt.gb.GPU
 
 fun java.io.File.toShortList(): List<Short> =
   this.readBytes().map({
@@ -13,16 +15,15 @@ fun java.io.File.toShortList(): List<Short> =
     .toShort(16)
   })
 fun main(args: Array<String>) {
-  val cpu = CPU()
   val bios = java.io.File(CPU::class.java.getResource("dmg_boot.bin").toURI())
   val rom = java.io.File(CPU::class.java.getResource("Tetris.gb").toURI())
-  cpu.ram.load(0, rom.toShortList())
-  cpu.ram.load(0, bios.toShortList())
+  RAM.load(0, rom.toShortList())
+  RAM.load(0, bios.toShortList())
   while (true) {
-    if (cpu.PC > 0x1d) {
-      println(cpu)
+    if (CPU.PC > 0x1d) {
+      println(CPU)
       readLine()
     }
-    cpu.tick()
+    CPU.tick()
   }
 }

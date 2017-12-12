@@ -1,6 +1,6 @@
 package de.prt.gb
 
-class RAM() {
+object RAM {
   val ram = Array(65535, { 0.toShort() })
   fun getByteAt(addr: Int): Short {
     return ram[addr]
