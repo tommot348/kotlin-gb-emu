@@ -17,12 +17,12 @@ object CPU {
   private var prefix = false
   private var time = 0
 
-  private fun splitHighByteLowByte(x: Int): Pair<Short, Short> {
+  fun splitHighByteLowByte(x: Int): Pair<Short, Short> {
     val b = x and 0b0000000011111111
     val a = x / 256
     return Pair(a.toShort(), b.toShort())
   }
-  private fun joinHighByteLowByte(a: Short, b: Short): Int {
+  fun joinHighByteLowByte(a: Short, b: Short): Int {
       return ((a * 256) + b).toInt()
   }
 
@@ -349,7 +349,7 @@ object CPU {
     return ret
   }
 
-  private fun BIT(a: Short, c: Int): Char {
+  fun BIT(a: Short, c: Int): Char {
     setHalfCarry('1')
     setSubstract('0')
     val an = a.toString(2).padStart(8, '0').get(7 - c)
