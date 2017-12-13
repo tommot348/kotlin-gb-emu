@@ -32,7 +32,10 @@ object GPU {
       val spriteSize = getBit(lcdc, 2)
       val showSprites = (getBit(lcdc, 1) == '1')
       val stat = RAM.getByteAt(0xFF41)
+<<<<<<< HEAD
       
+=======
+>>>>>>> 53457f370463775b2cf985b18b0342b0ac552a34
       val scy = RAM.getByteAt(0xFF42)
       val scx = RAM.getByteAt(0xFF43)
       val ly = RAM.getByteAt(0xFF44)
