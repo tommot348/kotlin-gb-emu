@@ -2,8 +2,8 @@ package main
 
 import de.prt.gb.CPU
 import de.prt.gb.RAM
-//import de.prt.gb.GPU
-import de.prt.gb.Display
+import de.prt.gb.GPU
+//import de.prt.gb.Display
 
 fun java.io.File.toShortList(): List<Short> =
   this.readBytes().map({
@@ -20,13 +20,14 @@ fun main(args: Array<String>) {
   val rom = java.io.File(CPU::class.java.getResource("Tetris.gb").toURI())
   RAM.load(0, rom.toShortList())
   RAM.load(0, bios.toShortList())
-  val disp = Display()
-  disp.showWindow()
+//  val disp = Display()
+//  disp.showWindow()
   while (true) {
     if (CPU.PC > 0x1d) {
       println(CPU)
       readLine()
     }
     CPU.tick()
+    GPU.tick()
   }
 }
