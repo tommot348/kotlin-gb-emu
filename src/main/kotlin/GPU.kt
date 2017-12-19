@@ -68,6 +68,9 @@ object GPU {
           })
         }
       })
+      val sprites = (0xFE00..0xFE9F step 4).map({ 
+        {}
+      })
     }
   }
 }
