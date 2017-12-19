@@ -8,7 +8,7 @@ import java.awt.Color
 import java.awt.Graphics
 
 class FrameBuffer : JPanel() {
-  var dat: List<Int>
+  var dat = listOf(0)
   init {
     setBorder(BorderFactory.createLineBorder(Color.black))
   }
