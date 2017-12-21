@@ -23,11 +23,7 @@ fun main(args: Array<String>) {
 //  val disp = Display()
 //  disp.showWindow()
   while (true) {
-    if (CPU.PC > 0x1d) {
-      println(CPU)
-      readLine()
-    }
-    CPU.tick()
-    GPU.tick()
+    val time = CPU.tick()
+    GPU.tick(time)
   }
 }

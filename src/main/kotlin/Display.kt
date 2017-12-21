@@ -27,12 +27,12 @@ class Display : JFrame("Test") {
   }
   fun showWindow() {
     SwingUtilities.invokeLater(Runnable() {
-      show()
+      setVisible(true)
     })
   }
   fun hideWindow() {
     SwingUtilities.invokeLater(Runnable() {
-      hide()
+      setVisible(false)
     })
   }
 }

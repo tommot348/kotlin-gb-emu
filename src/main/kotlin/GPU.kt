@@ -1,7 +1,23 @@
 package de.prt.gb
 
 object GPU {
+  val stateClocks = mapOf(0 to 201,
+                          1 to 4560,
+                          2 to 77,
+                          3 to 169)
   var state = 2
+  var lastClock = 0
+  var clocksTillNextState: Int = stateClocks[state] ?: 0
+  private var _dat = mapOf(
+      "bg" to listOf(0),
+      "window" to listOf(0),
+      "sprites" to listOf(0)
+  )
+  val dat: Map<String, Any>
+    get() {
+      return _dat
+    }
+
   private fun getBit(of: Short, nr: Int): Char {
     return of.toString(2).padStart(8, '0').get(nr - 7)
   }
@@ -17,60 +33,129 @@ object GPU {
     val binaryMost = most.toString(2).padStart(8, '0')
     return (7 downTo 0).map({ palette["${binaryMost[it]}${binaryLeast[it]}".toInt(2)] })
   }
-  fun tick() {
+  private fun getBGData(
+      BGTileMap: List<Short>,
+      BGandWindowTileData: List<Short>,
+      BGandWindowMode: Char,
+      bgp: List<Int>
+  ): List<Int> {
+    return BGTileMap.flatMap({ tileNr ->
+      if (BGandWindowMode == '1') {
+        (0..15 step 2).flatMap({ i ->
+          byteToColorData(
+              BGandWindowTileData[tileNr + i],
+              BGandWindowTileData[tileNr + i + 1],
+              bgp)
+        })
+      } else {
+        (0..15 step 2).flatMap({ i ->
+          byteToColorData(
+              BGandWindowTileData[tileNr + i + 128],
+              BGandWindowTileData[tileNr + i + 129],
+              bgp)
+        })
+      }
+    })
+  }
+  private fun getSpriteList(
+      tileData: List<Short>,
+      obp0: List<Int>,
+      obp1: List<Int>,
+      spriteSize: Char
+  ): List<Map<String, Any>> {
+    return (0xFE00..0xFE9F step 4).map({
+      val attrib = RAM.getByteAt(it + 3)
+      val palette =
+        if (getBit(attrib, 5) == '0') {
+          obp0
+        } else {
+          obp1
+        }
+      val tileNr = RAM.getByteAt(it + 2)
+      val dat = if (spriteSize == '0') {
+        (0..15 step 2).flatMap({ i ->
+          byteToColorData(
+            tileData[tileNr + i],
+            tileData[tileNr + i + 1],
+            palette)
+        })
+      } else {
+        val upper = (tileNr.toInt() and 0xFE)
+        val lower = (tileNr.toInt() or 0x1)
+        listOf(upper, lower).flatMap({ curr ->
+          (0..15 step 2).flatMap({ i ->
+            byteToColorData(
+              tileData[curr + i],
+              tileData[curr + i + 1],
+              palette)
+          })
+        })
+      }
+      mapOf(
+        "y" to RAM.getByteAt(it),
+        "x" to RAM.getByteAt(it + 1),
+        "above" to (getBit(attrib, 7) == '0'),
+        "flipY" to (getBit(attrib, 6) == '1'),
+        "flipX" to (getBit(attrib, 5) == '1'),
+        "palette" to palette,
+        "data" to dat
+      )
+    })
+  }
+  fun tick(clock: Int) {
     val lcdc = RAM.getByteAt(0xFF40)
+    val stat = RAM.getByteAt(0xFF41)
     if (getBit(lcdc, 7) == '1') {
-      val WindowTileMap = if (getBit(lcdc, 6) == '0') {
-        (0x9800..0x9BFF).map({ RAM.getByteAt(it) })
-      } else {
-        (0x9C00..0x9FFF).map({ RAM.getByteAt(it) })
-      }
-      val showWindow = (getBit(lcdc, 5) == '1')
-      val BGandWindowMode = getBit(lcdc, 4)
-      val BGandWindowTileData = if (BGandWindowMode == '0') {
-        (0x8800..0x97FF).map({ RAM.getByteAt(it) })
-      } else {
-        (0x8000..0x8FFF).map({ RAM.getByteAt(it) })
-      }
-      val BGTileMap = if (getBit(lcdc, 3) == '0') {
-        (0x9800..0x9BFF).map({ RAM.getByteAt(it) })
-      } else {
-        (0x9C00..0x9FFF).map({ RAM.getByteAt(it) })
-      }
-      val showBG = getBit(lcdc, 0) == '1'
-      val spriteSize = getBit(lcdc, 2)
-      val showSprites = (getBit(lcdc, 1) == '1')
-      val stat = RAM.getByteAt(0xFF41)
-      val scy = RAM.getByteAt(0xFF42)
-      val scx = RAM.getByteAt(0xFF43)
+      clocksTillNextState -= (clock - lastClock)
       val ly = RAM.getByteAt(0xFF44)
       val lyc = RAM.getByteAt(0xFF45)
-      val bgp = byteToPalette(RAM.getByteAt(0xFF47))
-      val obp0 = byteToPalette(RAM.getByteAt(0xFF48))
-      val obp1 = byteToPalette(RAM.getByteAt(0xFF49))
-      val wy = RAM.getByteAt(0xFF4A)
-      val wx = RAM.getByteAt(0xFF4B)
-      val oam: List<Short> = (0xFE00..0xFE9F).map({ RAM.getByteAt(it) })
-      val bg = BGTileMap.flatMap({ tileNr ->
-        if (BGandWindowMode == '1') {
-          (0..15 step 2).map({ i ->
-            byteToColorData(
-                BGandWindowTileData[tileNr + i],
-                BGandWindowTileData[tileNr + i + 1],
-                bgp)
-          })
-        } else {
-          (0..15 step 2).map({ i ->
-            byteToColorData(
-                BGandWindowTileData[tileNr + i + 128],
-                BGandWindowTileData[tileNr + i + 129],
-                bgp)
-          })
+      if (clocksTillNextState <= 0) {
+        when (state) {
+          0 -> if (ly < 144) {
+            RAM.setByteAt(0xFF44, (ly + 1).toShort())
+            state = 2
+          }
+          1 -> { state = 2 }
+          2 -> { state = 3 }
+          3 -> { state = 0 }
         }
-      })
-      val sprites = (0xFE00..0xFE9F step 4).map({ 
-        {}
-      })
+        clocksTillNextState = stateClocks[state] ?: 0
+        val statStr = stat.toString(2).padStart(8, '0')
+        RAM.setByteAt(0xFF41, (statStr.substring(0, 6) + state.toString(2)).toShort(2))
+      }
+      if (state == 1) {
+        val WindowTileMap = if (getBit(lcdc, 6) == '0') {
+          (0x9800..0x9BFF).map({ RAM.getByteAt(it) })
+        } else {
+          (0x9C00..0x9FFF).map({ RAM.getByteAt(it) })
+        }
+        val showWindow = (getBit(lcdc, 5) == '1')
+        val BGandWindowMode = getBit(lcdc, 4)
+        val BGandWindowTileData = if (BGandWindowMode == '0') {
+          (0x8800..0x97FF).map({ RAM.getByteAt(it) })
+        } else {
+          (0x8000..0x8FFF).map({ RAM.getByteAt(it) })
+        }
+        val BGTileMap = if (getBit(lcdc, 3) == '0') {
+          (0x9800..0x9BFF).map({ RAM.getByteAt(it) })
+        } else {
+          (0x9C00..0x9FFF).map({ RAM.getByteAt(it) })
+        }
+        val spriteTileData = (0x8000..0x8FFF).map({ RAM.getByteAt(it) })
+        val showBG = getBit(lcdc, 0) == '1'
+        val spriteSize = getBit(lcdc, 2)
+        val showSprites = (getBit(lcdc, 1) == '1')
+        val scy = RAM.getByteAt(0xFF42)
+        val scx = RAM.getByteAt(0xFF43)
+        val bgp = byteToPalette(RAM.getByteAt(0xFF47))
+        val obp0 = byteToPalette(RAM.getByteAt(0xFF48))
+        val obp1 = byteToPalette(RAM.getByteAt(0xFF49))
+        val wy = RAM.getByteAt(0xFF4A)
+        val wx = RAM.getByteAt(0xFF4B)
+        val bg = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode, bgp)
+        val sprites = getSpriteList(spriteTileData, obp0, obp1, spriteSize)
+      }
     }
+    lastClock = clock
   }
 }

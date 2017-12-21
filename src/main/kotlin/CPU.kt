@@ -1251,7 +1251,7 @@ Prefix: $prefix
 CurrOp: ${RAM.getByteAt(PC).toString(16).padStart(2, '0')}
 """
 
-  fun tick() {
+  fun tick(): Int {
     if (running) {
       val op = RAM.getByteAt(PC++)
       if (prefix) {
@@ -1261,5 +1261,6 @@ CurrOp: ${RAM.getByteAt(PC).toString(16).padStart(2, '0')}
         time += opcodes.get(op.toInt())!!()
       }
     }
+    return time
   }
 }
