@@ -8,10 +8,11 @@ object GPU {
   var state = 2
   var lastClock = 0
   var clocksTillNextState: Int = stateClocks[state] ?: 0
-  private var _dat = mapOf(
+  private var _dat: Map<String, List<Any>> = mapOf(
       "bg" to listOf(0),
       "window" to listOf(0),
-      "sprites" to listOf(0)
+      "sprites" to listOf(0),
+      "attrib" to listOf(false, false, false)
   )
   val dat: Map<String, Any>
     get() {
@@ -105,23 +106,69 @@ object GPU {
   fun tick(clock: Int) {
     val lcdc = RAM.getByteAt(0xFF40)
     val stat = RAM.getByteAt(0xFF41)
+    var statStr = stat.toString(2).padStart(8, '0')
+    val interruptFlags = RAM.getByteAt(0xFF0F)
     if (getBit(lcdc, 7) == '1') {
       clocksTillNextState -= (clock - lastClock)
       val ly = RAM.getByteAt(0xFF44)
       val lyc = RAM.getByteAt(0xFF45)
+      if (ly == lyc) {
+        statStr = statStr.substring(0, 5) + "1" + statStr.substring(6)
+        if (getBit(stat, 6) == '1') {
+          RAM.setByteAt(
+              0xFF0F,
+              (interruptFlags.toInt() or 0b10).toShort(),
+              true)
+        }
+      }
+
       if (clocksTillNextState <= 0) {
         when (state) {
           0 -> if (ly < 144) {
-            RAM.setByteAt(0xFF44, (ly + 1).toShort())
+            RAM.setByteAt(0xFF44, (ly + 1).toShort(), true)
+            if (getBit(stat, 5) == '1') {
+              RAM.setByteAt(
+                  0xFF0F,
+                  (interruptFlags.toInt() or 0b10).toShort(),
+                  true)
+            }
+            state = 2
+          } else {
+            RAM.setByteAt(0xFF44, 0.toShort(), true)
+            RAM.setByteAt(
+                0xFF0F,
+                (interruptFlags.toInt() or 0b00000001).toShort(),
+                true)
+            if (getBit(stat, 4) == '1') {
+              RAM.setByteAt(
+                  0xFF0F,
+                  (interruptFlags.toInt() or 0b11).toShort(),
+                  true)
+            }
+            state = 1
+          }
+          1 -> {
+            if (getBit(stat, 5) == '1') {
+              RAM.setByteAt(
+                  0xFF0F,
+                  (interruptFlags.toInt() or 0b10).toShort(),
+                  true)
+            }
             state = 2
           }
-          1 -> { state = 2 }
           2 -> { state = 3 }
-          3 -> { state = 0 }
+          3 -> {
+            if (getBit(stat, 3) == '1') {
+              RAM.setByteAt(
+                  0xFF0F,
+                  (interruptFlags.toInt() or 0b10).toShort(),
+                  true)
+            }
+            state = 0
+          }
         }
         clocksTillNextState = stateClocks[state] ?: 0
-        val statStr = stat.toString(2).padStart(8, '0')
-        RAM.setByteAt(0xFF41, (statStr.substring(0, 6) + state.toString(2)).toShort(2))
+        statStr = statStr.substring(0, 6) + state.toString(2)
       }
       if (state == 1) {
         val WindowTileMap = if (getBit(lcdc, 6) == '0') {
@@ -153,9 +200,16 @@ object GPU {
         val wy = RAM.getByteAt(0xFF4A)
         val wx = RAM.getByteAt(0xFF4B)
         val bg = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode, bgp)
+        val window = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode, bgp)
         val sprites = getSpriteList(spriteTileData, obp0, obp1, spriteSize)
+        _dat = mapOf(
+            "bg" to bg,
+            "window" to window,
+            "sprites" to sprites,
+            "attrib" to listOf(showBG, showWindow, showSprites))
       }
     }
     lastClock = clock
+    RAM.setByteAt(0xFF41, (statStr).toShort(2), true)
   }
 }

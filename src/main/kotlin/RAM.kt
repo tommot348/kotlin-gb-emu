@@ -8,12 +8,12 @@ object RAM {
   fun load(addr: Int, dat: List<Short>) {
     dat.forEachIndexed({ i: Int, d: Short -> ram[addr + i] = d })
   }
-  fun setByteAt(addr: Int, value: Short) {
+  fun setByteAt(addr: Int, value: Short, hardware: Boolean = false) {
     ram[addr] = value
   }
   fun setWordAt(addr: Int, value: Int) {
-    val h = value and 0x0000FF00
-    val l = value and 0x000000FF
+    val h = value and 0xFF00
+    val l = value and 0xFF
     ram[addr] = h.toShort()
     ram[addr + 1] = l.toShort()
   }
