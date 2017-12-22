@@ -8,16 +8,6 @@ object GPU {
   var state = 2
   var lastClock = 0
   var clocksTillNextState: Int = stateClocks[state] ?: 0
-  private var _dat: Map<String, List<Any>> = mapOf(
-      "bg" to listOf(0),
-      "window" to listOf(0),
-      "sprites" to listOf(0),
-      "attrib" to listOf(false, false, false)
-  )
-  val dat: Map<String, Any>
-    get() {
-      return _dat
-    }
 
   private fun getBit(of: Short, nr: Int): Char {
     return of.toString(2).padStart(8, '0').get(7 - nr)
@@ -29,31 +19,28 @@ object GPU {
                   ps.substring(2, 4).toInt(2),
                   ps.substring(0, 2).toInt(2))
   }
-  private fun byteToColorData(least: Short, most: Short, palette: List<Int>): List<Int> {
+  private fun byteToPatternData(least: Short, most: Short): List<Int> {
     val binaryLeast = least.toString(2).padStart(8, '0')
     val binaryMost = most.toString(2).padStart(8, '0')
-    return (7 downTo 0).map({ palette["${binaryMost[it]}${binaryLeast[it]}".toInt(2)] })
+    return (7 downTo 0).map({ "${binaryMost[it]}${binaryLeast[it]}".toInt(2) })
   }
   private fun getBGData(
       BGTileMap: List<Short>,
       BGandWindowTileData: List<Short>,
-      BGandWindowMode: Char,
-      bgp: List<Int>
+      BGandWindowMode: Char
   ): List<Int> {
     return BGTileMap.flatMap({ tileNr ->
       if (BGandWindowMode == '1') {
         (0..15 step 2).flatMap({ i ->
-          byteToColorData(
+          byteToPatternData(
               BGandWindowTileData[tileNr + i],
-              BGandWindowTileData[tileNr + i + 1],
-              bgp)
+              BGandWindowTileData[tileNr + i + 1])
         })
       } else {
         (0..15 step 2).flatMap({ i ->
-          byteToColorData(
+          byteToPatternData(
               BGandWindowTileData[tileNr + i + 128],
-              BGandWindowTileData[tileNr + i + 129],
-              bgp)
+              BGandWindowTileData[tileNr + i + 129])
         })
       }
     })
@@ -75,20 +62,18 @@ object GPU {
       val tileNr = RAM.getByteAt(it + 2)
       val dat = if (spriteSize == '0') {
         (0..15 step 2).flatMap({ i ->
-          byteToColorData(
+          byteToPatternData(
             tileData[tileNr + i],
-            tileData[tileNr + i + 1],
-            palette)
+            tileData[tileNr + i + 1])
         })
       } else {
         val upper = (tileNr.toInt() and 0xFE)
         val lower = (tileNr.toInt() or 0x1)
         listOf(upper, lower).flatMap({ curr ->
           (0..15 step 2).flatMap({ i ->
-            byteToColorData(
+            byteToPatternData(
               tileData[curr + i],
-              tileData[curr + i + 1],
-              palette)
+              tileData[curr + i + 1])
           })
         })
       }
@@ -103,7 +88,7 @@ object GPU {
       )
     })
   }
-  fun tick(clock: Int) {
+  fun tick(clock: Int): List<Int> {
     val lcdc = RAM.getByteAt(0xFF40)
     val stat = RAM.getByteAt(0xFF41)
     var statStr = stat.toString(2).padStart(8, '0')
@@ -199,17 +184,13 @@ object GPU {
         val obp1 = byteToPalette(RAM.getByteAt(0xFF49))
         val wy = RAM.getByteAt(0xFF4A)
         val wx = RAM.getByteAt(0xFF4B)
-        val bg = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode, bgp)
-        val window = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode, bgp)
+        val bg = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode)
+        val window = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode)
         val sprites = getSpriteList(spriteTileData, obp0, obp1, spriteSize)
-        _dat = mapOf(
-            "bg" to bg,
-            "window" to window,
-            "sprites" to sprites,
-            "attrib" to listOf(showBG, showWindow, showSprites))
       }
     }
     lastClock = clock
     RAM.setByteAt(0xFF41, (statStr).toShort(2), true)
+    return listOf(0)
   }
 }

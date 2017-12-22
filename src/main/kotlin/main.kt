@@ -23,8 +23,8 @@ fun main(args: Array<String>) {
 //  val disp = Display()
 //  disp.showWindow()
   while (true) {
+    CPU.handleInterrupts()
     val time = CPU.tick()
     GPU.tick(time)
-    println(time)
   }
 }

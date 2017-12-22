@@ -1236,6 +1236,45 @@ object CPU {
     0xfe to { RAM.setByteAt(HL, SET(RAM.getByteAt(HL), 7)); 16 },
     0xff to { A = SET(A, 7); 8 }
   )
+  private fun INT(addr: Int) {
+    interrupts = false
+    RAM.setByteAt(SP - 1, PCh)
+    RAM.setByteAt(SP - 2, PCl)
+    SP = SP - 2
+    PC = addr
+  }
+  fun handleInterrupts() {
+    if (interrupts) {
+      val ints = RAM.getByteAt(0xFF0F).toInt()
+      val intsEnabled = RAM.getByteAt(0xFFFF).toInt()
+
+      if ((ints and intsEnabled) > 0) {
+        when {
+          (ints and 0b1) == 1 -> {
+            RAM.setByteAt(0xFF0F, (ints and 0b11111110).toShort())
+            INT(0x40)
+          }
+          (ints and 0b10) == 0b10 -> {
+            RAM.setByteAt(0xFF0F, (ints and 0b11111101).toShort())
+            INT(0x48)
+          }
+          (ints and 0b100) == 0b100 -> {
+            RAM.setByteAt(0xFF0F, (ints and 0b11111011).toShort())
+            INT(0x50)
+          }
+          (ints and 0b1000) == 0b1000 -> {
+            RAM.setByteAt(0xFF0F, (ints and 0b11110111).toShort())
+            INT(0x58)
+          }
+          (ints and 0b10000) == 0b10000 -> {
+            RAM.setByteAt(0xFF0F, (ints and 0b11101111).toShort())
+            INT(0x60)
+          }
+        }
+      }
+    }
+  }
+
   override fun toString() = """
 CPU state
 PC: ${PC.toString(16)}
