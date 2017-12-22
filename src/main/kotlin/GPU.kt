@@ -20,7 +20,7 @@ object GPU {
     }
 
   private fun getBit(of: Short, nr: Int): Char {
-    return of.toString(2).padStart(8, '0').get(nr - 7)
+    return of.toString(2).padStart(8, '0').get(7 - nr)
   }
   private fun byteToPalette(input: Short): List<Int> {
     val ps = input.toString(2).padStart(8, '0')

@@ -25,5 +25,6 @@ fun main(args: Array<String>) {
   while (true) {
     val time = CPU.tick()
     GPU.tick(time)
+    println(time)
   }
 }
