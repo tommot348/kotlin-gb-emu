@@ -1,7 +1,7 @@
 package de.prt.gb
 private data class Sprite(
-  val x: Int,
-  val y: Int,
+  val x: Short,
+  val y: Short,
   val flipX: Boolean,
   val flipY: Boolean,
   val above: Boolean,
@@ -57,7 +57,7 @@ object GPU {
       obp0: List<Int>,
       obp1: List<Int>,
       spriteSize: Char
-  ): List<Map<String, Any>> {
+  ): List<Sprite> {
     return (0xFE00..0xFE9F step 4).map({
       val attrib = RAM.getByteAt(it + 3)
       val palette =
@@ -95,10 +95,10 @@ object GPU {
       )
     })
   }
-  var bg: List<Int> = listOf(0)
-  var window: List<Int> = listOf(0)
-  var sprites: List<Sprite> = listOf(mapOf("" to 0))
-  var lines: List<List<Int>>? = null
+  private var bg: List<Int> = listOf(0)
+  private var window: List<Int> = listOf(0)
+  private var sprites: List<Sprite>? = null
+  private var lines: List<List<Int>>? = null
 
   private fun getLine(y: Int, lcdc: Short): List<Int> {
     val scy = RAM.getByteAt(0xFF42)
@@ -110,23 +110,38 @@ object GPU {
     val showBG = getBit(lcdc, 0) == '1'
     val showSprites = (getBit(lcdc, 1) == '1')
     // step get line from background
-    val line = bg.slice((y * 160)..(y + 160 + 160))
+    val realY = (y + scy) % 144
+    val tempLine = bg.slice((realY * 160)..(realY * 160 + 160))
+    val line = tempLine.mapIndexed({ i, _ ->
+      val realX = (i + scx) % 160
+      tempLine[realX]
+    })
     // possibly overwrite with window
     val withWindow = line.mapIndexed({ i, curr ->
-      if (scy <= y) {
-        if (scx <= i) {
-          window[(y - scy) * 160 + (i - scx)]
-        } else {
-          curr
+      if (showWindow) {
+        if (wy <= y) {
+          if (wx <= i) {
+            window[(y - wy) * 160 + (i - wx)]
+          }
         }
-      } else {
-        curr
       }
+      curr
     })
     // possibly overwrite with sprite
     return withWindow.mapIndexed({ i, curr ->
       val spriteSize = if (getBit(lcdc, 2) == '0') 8 else 16
-      val spritesOnLine = sprites.filter({ it.y >= y && it.y < y + spriteSize })
+      val spritesOnLine = sprites?.filter({ it.y >= y && it.y < y + spriteSize })
+      if (showSprites) {
+        if (spritesOnLine != null && spritesOnLine.size > 0) {
+          val sprite = spritesOnLine.filter({ it.x >= i && it.x < i + 8 })[0]
+          sprite.palette[sprite.dat[(y - sprite.y) + (i - sprite.x)]]
+        }
+      }
+      if (showBG) {
+        bgp[curr]
+      } else {
+        0b11
+      }
     })
   }
 
@@ -216,7 +231,7 @@ object GPU {
             val obp0 = byteToPalette(RAM.getByteAt(0xFF48))
             val obp1 = byteToPalette(RAM.getByteAt(0xFF49))
             bg = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode)
-            window = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode)
+            window = getBGData(WindowTileMap, BGandWindowTileData, BGandWindowMode)
             sprites = getSpriteList(spriteTileData, obp0, obp1, spriteSize)
             state = 0
           }
