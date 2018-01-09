@@ -1,4 +1,5 @@
 package de.prt.gb
+import kotlin.system.exitProcess
 private data class Sprite(
   val x: Short,
   val y: Short,
@@ -8,6 +9,7 @@ private data class Sprite(
   val palette: List<Int>,
   val dat: List<Int>)
 object GPU {
+  val display = Display()
   val stateClocks = mapOf(0 to 201,
                           1 to 4560,
                           2 to 77,
@@ -15,6 +17,10 @@ object GPU {
   var state = 2
   var lastClock = 0
   var clocksTillNextState: Int = stateClocks[state] ?: 0
+
+  init {
+    display.showWindow()
+  }
 
   private fun getBit(of: Short, nr: Int): Char {
     return of.toString(2).padStart(8, '0').get(7 - nr)
@@ -98,9 +104,9 @@ object GPU {
   private var bg: List<Int> = listOf(0)
   private var window: List<Int> = listOf(0)
   private var sprites: List<Sprite>? = null
-  private var lines: List<List<Int>>? = null
+  private val lines: ArrayList<List<Int>> = ArrayList<List<Int>>()
 
-  private fun getLine(y: Int, lcdc: Short): List<Int> {
+  private fun getLine(y: Short, lcdc: Short): List<Int> {
     val scy = RAM.getByteAt(0xFF42)
     val scx = RAM.getByteAt(0xFF43)
     val bgp = byteToPalette(RAM.getByteAt(0xFF47))
@@ -134,13 +140,21 @@ object GPU {
       if (showSprites) {
         if (spritesOnLine != null && spritesOnLine.size > 0) {
           val sprite = spritesOnLine.filter({ it.x >= i && it.x < i + 8 })[0]
-          sprite.palette[sprite.dat[(y - sprite.y) + (i - sprite.x)]]
+          if (sprite.above) {
+            sprite.palette[sprite.dat[(y - sprite.y) + (i - sprite.x)]]
+          } else {
+            if (!(withWindow[i] in 1..3)) {
+              sprite.palette[sprite.dat[(y - sprite.y) + (i - sprite.x)]]
+            } else {
+              bgp[curr]
+            }
+          }
         }
       }
       if (showBG) {
         bgp[curr]
       } else {
-        0b11
+        0
       }
     })
   }
@@ -175,7 +189,7 @@ object GPU {
                   true)
             }
             //add line
-
+            lines.add(getLine(ly, lcdc))
             state = 2
           } else {
             RAM.setByteAt(0xFF44, 0.toShort(), true)
@@ -190,6 +204,8 @@ object GPU {
                   true)
             }
             //send to display
+            display.update(lines.flatten())
+            lines.removeAll({ true })
             //clear
             state = 1
           }

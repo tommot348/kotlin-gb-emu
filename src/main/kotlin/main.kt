@@ -20,8 +20,6 @@ fun main(args: Array<String>) {
   val rom = java.io.File(CPU::class.java.getResource("Tetris.gb").toURI())
   RAM.load(0, rom.toShortList())
   RAM.load(0, bios.toShortList())
-//  val disp = Display()
-//  disp.showWindow()
   while (true) {
     CPU.handleInterrupts()
     val time = CPU.tick()
