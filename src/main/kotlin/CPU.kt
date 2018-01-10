@@ -17,6 +17,10 @@ object CPU {
   private var prefix = false
   private var time = 0
 
+  fun setIP(p: Int) {
+    PC = p
+  }
+
   fun splitHighByteLowByte(x: Int): Pair<Short, Short> {
     val b = x and 0b0000000011111111
     val a = x / 256
@@ -173,7 +177,7 @@ object CPU {
     var rthis = (this - a).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
     if (rthis < 0.toShort()) {
-      rthis = (0xff.toShort() - rthis).toShort()
+      rthis = (0xff.toShort() + rthis).toShort()
       setCarry('1')
     }
     when ("$thirdHL$thirdBC$thirdAfter") {
@@ -1247,7 +1251,7 @@ object CPU {
     if (interrupts) {
       val ints = RAM.getByteAt(0xFF0F).toInt()
       val intsEnabled = RAM.getByteAt(0xFFFF).toInt()
-
+      println("Interrupt ${ints.toString(2)} ${intsEnabled.toString(2)}")
       if ((ints and intsEnabled) > 0) {
         when {
           (ints and 0b1) == 1 -> {
