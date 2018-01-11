@@ -19,9 +19,12 @@ fun main(args: Array<String>) {
   val rom = java.io.File(CPU::class.java.getResource("Tetris.gb").toURI())
   RAM.load(0, rom.toShortList())
   RAM.load(0, bios.toShortList())
+//  RAM.setByteAt(0xFF40, 0b11111111)
+//  CPU.setIP(0x0100)
   while (true) {
     CPU.handleInterrupts()
     val time = CPU.tick()
+    println(CPU)
     GPU.tick(time)
   }
 }

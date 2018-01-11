@@ -34,7 +34,10 @@ object GPU {
   internal fun byteToPatternData(least: Short, most: Short): List<Int> {
     val binaryLeast = least.toString(2).padStart(8, '0')
     val binaryMost = most.toString(2).padStart(8, '0')
-    return (7 downTo 0).map({ "${binaryMost[it]}${binaryLeast[it]}".toInt(2) })
+    val dat = (7 downTo 0).map({ "${binaryMost[it]}${binaryLeast[it]}".toInt(2) })
+//    dat.forEach({ println(it.toString(2).padStart(8, '0')) })
+  //  println("")
+    return dat
   }
   internal fun getBGData(
       BGTileMap: List<Short>,
@@ -138,14 +141,16 @@ object GPU {
       val spritesOnLine = sprites?.filter({ it.y >= y && it.y < y + spriteSize })
       if (showSprites) {
         if (spritesOnLine != null && spritesOnLine.size > 0) {
-          val sprite = spritesOnLine.filter({ it.x >= i && it.x < i + 8 })[0]
-          if (sprite.above) {
-            sprite.palette[sprite.dat[(y - sprite.y) + (i - sprite.x)]]
-          } else {
-            if (!(withWindow[i] in 1..3)) {
+          val sprite = spritesOnLine.filter({ it.x >= i && it.x < i + 8 }).firstOrNull()
+          if (sprite != null) {
+            if (sprite.above) {
               sprite.palette[sprite.dat[(y - sprite.y) + (i - sprite.x)]]
             } else {
-              bgp[curr]
+              if (!(withWindow[i] in 1..3)) {
+                sprite.palette[sprite.dat[(y - sprite.y) + (i - sprite.x)]]
+              } else {
+                bgp[curr]
+              }
             }
           }
         }
