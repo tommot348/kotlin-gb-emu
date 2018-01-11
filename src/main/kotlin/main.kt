@@ -1,9 +1,8 @@
 package main
 
-import de.prt.gb.CPU
-import de.prt.gb.RAM
-import de.prt.gb.GPU
-//import de.prt.gb.Display
+import de.prt.gb.hardware.CPU
+import de.prt.gb.hardware.RAM
+import de.prt.gb.hardware.GPU
 
 fun java.io.File.toShortList(): List<Short> =
   this.readBytes().map({

@@ -1,5 +1,4 @@
-package de.prt.gb
-import kotlin.system.exitProcess
+package de.prt.gb.hardware
 private data class Sprite(
   val x: Short,
   val y: Short,
@@ -9,35 +8,35 @@ private data class Sprite(
   val palette: List<Int>,
   val dat: List<Int>)
 object GPU {
-  val display = Display()
-  val stateClocks = mapOf(0 to 201,
+  internal val display = Display()
+  internal val stateClocks = mapOf(0 to 201,
                           1 to 4560,
                           2 to 77,
                           3 to 169)
-  var state = 2
-  var lastClock = 0
-  var clocksTillNextState: Int = stateClocks[state] ?: 0
+  internal var state = 2
+  internal var lastClock = 0
+  internal var clocksTillNextState: Int = stateClocks[state] ?: 0
 
   init {
     display.showWindow()
   }
 
-  private fun getBit(of: Short, nr: Int): Char {
+  internal fun getBit(of: Short, nr: Int): Char {
     return of.toString(2).padStart(8, '0').get(7 - nr)
   }
-  private fun byteToPalette(input: Short): List<Int> {
+  internal fun byteToPalette(input: Short): List<Int> {
     val ps = input.toString(2).padStart(8, '0')
     return listOf(ps.substring(6).toInt(2),
                   ps.substring(4, 6).toInt(2),
                   ps.substring(2, 4).toInt(2),
                   ps.substring(0, 2).toInt(2))
   }
-  private fun byteToPatternData(least: Short, most: Short): List<Int> {
+  internal fun byteToPatternData(least: Short, most: Short): List<Int> {
     val binaryLeast = least.toString(2).padStart(8, '0')
     val binaryMost = most.toString(2).padStart(8, '0')
     return (7 downTo 0).map({ "${binaryMost[it]}${binaryLeast[it]}".toInt(2) })
   }
-  private fun getBGData(
+  internal fun getBGData(
       BGTileMap: List<Short>,
       BGandWindowTileData: List<Short>,
       BGandWindowMode: Char
@@ -101,12 +100,12 @@ object GPU {
       )
     })
   }
-  private var bg: List<Int> = listOf(0)
-  private var window: List<Int> = listOf(0)
+  internal var bg: List<Int> = listOf(0)
+  internal var window: List<Int> = listOf(0)
   private var sprites: List<Sprite>? = null
-  private val lines: ArrayList<List<Int>> = ArrayList<List<Int>>()
+  internal val lines: ArrayList<List<Int>> = ArrayList<List<Int>>()
 
-  private fun getLine(y: Short, lcdc: Short): List<Int> {
+  internal fun getLine(y: Short, lcdc: Short): List<Int> {
     val scy = RAM.getByteAt(0xFF42)
     val scx = RAM.getByteAt(0xFF43)
     val bgp = byteToPalette(RAM.getByteAt(0xFF47))

@@ -1,65 +1,66 @@
-package de.prt.gb
+package de.prt.gb.hardware
 import kotlin.system.exitProcess
-object CPU {
-  private var A: Short = 0
-  private var B: Short = 0
-  private var C: Short = 0
-  private var D: Short = 0
-  private var E: Short = 0
-  private var F: Short = 0
-  private var H: Short = 0
-  private var L: Short = 0
-  private var PCh: Short = 0
-  private var PCl: Short = 0
-  private var SP: Int = 0
-  private var running = true
-  private var interrupts = true
-  private var prefix = false
-  private var time = 0
 
-  fun splitHighByteLowByte(x: Int): Pair<Short, Short> {
+object CPU {
+  internal var A: Short = 0
+  internal var B: Short = 0
+  internal var C: Short = 0
+  internal var D: Short = 0
+  internal var E: Short = 0
+  internal var F: Short = 0
+  internal var H: Short = 0
+  internal var L: Short = 0
+  internal var PCh: Short = 0
+  internal var PCl: Short = 0
+  internal var SP: Int = 0
+  internal var running = true
+  internal var interrupts = true
+  internal var prefix = false
+  internal var time = 0
+
+  internal fun splitHighByteLowByte(x: Int): Pair<Short, Short> {
     val b = x and 0b0000000011111111
     val a = x / 256
     return Pair(a.toShort(), b.toShort())
   }
-  fun joinHighByteLowByte(a: Short, b: Short): Int {
+  internal fun joinHighByteLowByte(a: Short, b: Short): Int {
       return ((a * 256) + b).toInt()
   }
 
-  private fun getCarry(): Char = F.toString(2).padStart(8, '0').get(3)
-  private fun setCarry(c: Char) {
+  internal fun getCarry(): Char = F.toString(2).padStart(8, '0').get(3)
+  internal fun setCarry(c: Char) {
     when (c) {
       '0' -> F = (F.toInt() and 0b11100000).toShort()
       '1' -> F = (F.toInt() or 0b00010000).toShort()
     }
   }
-  private fun getHalfCarry(): Char = F.toString(2).padStart(8, '0').get(2)
-  private fun setHalfCarry(c: Char) {
+  internal fun getHalfCarry(): Char = F.toString(2).padStart(8, '0').get(2)
+  internal fun setHalfCarry(c: Char) {
     when (c) {
       '0' -> F = (F.toInt() and 0b11010000).toShort()
       '1' -> F = (F.toInt() or 0b00100000).toShort()
     }
   }
-  private fun getSubstract(): Char = F.toString(2).padStart(8, '0').get(1)
-  private fun setSubstract(c: Char) {
+  internal fun getSubstract(): Char = F.toString(2).padStart(8, '0').get(1)
+  internal fun setSubstract(c: Char) {
     when (c) {
       '0' -> F = (F.toInt() and 0b10110000).toShort()
       '1' -> F = (F.toInt() or 0b01000000).toShort()
     }
   }
-  private fun getZero(): Char = F.toString(2).padStart(8, '0').get(0)
-  private fun setZero(c: Char) {
+  internal fun getZero(): Char = F.toString(2).padStart(8, '0').get(0)
+  internal fun setZero(c: Char) {
     when (c) {
       '0' -> F = (F.toInt() and 0b01110000).toShort()
       '1' -> F = (F.toInt() or 0b10000000).toShort()
     }
   }
-  fun Short.INC(): Short {
+  fun INC(a: Short): Short {
       setZero('0')
       setHalfCarry('0')
       setSubstract('0')
-      val fourth = this.toString(2).padStart(8, '0').get(4)
-      var rthis = (this + 1).toShort()
+      val fourth = a.toString(2).padStart(8, '0').get(4)
+      var rthis = (a + 1).toShort()
       if (rthis > 255.toShort() || rthis == 0.toShort()) {
         rthis = 0.toShort()
         setZero('1')
@@ -70,9 +71,9 @@ object CPU {
       }
       return rthis
   }
-  fun Short.DEC(): Short {
-    val fourth = this.toString(2).padStart(8, '0').get(4)
-    var rthis = (this - 1).toShort()
+  fun DEC(a: Short): Short {
+    val fourth = a.toString(2).padStart(8, '0').get(4)
+    var rthis = (a - 1).toShort()
     setZero('0')
     setHalfCarry('0')
     if (rthis < (0.toShort())) {
@@ -88,28 +89,28 @@ object CPU {
     setSubstract('1')
     return rthis
   }
-  fun Int.INC(): Int {
-    var rthis = this + 1
+  fun INC(a: Int): Int {
+    var rthis = a + 1
     if (rthis > 0xFFFF) {
       rthis = 0
     }
     return rthis
   }
-  fun Int.DEC(): Int {
-    var rthis = this - 1
+  fun DEC(a: Int): Int {
+    var rthis = a - 1
     if (rthis < 0) {
       rthis = 0xFFFF
     }
     return rthis
   }
 
-  infix fun Int.ADD(a: Int): Int {
+  fun ADD(a: Int, b: Int): Int {
       setHalfCarry('0')
       setSubstract('0')
       setCarry('0')
-      val eighthHL = this.toString(2).padStart(16, '0').get(8)
+      val eighthHL = b.toString(2).padStart(16, '0').get(8)
       val eighthBC = a.toString(2).padStart(16, '0').get(8)
-      var rthis = this + a
+      var rthis = b + a
       val eighthAfter = rthis.toString(2).padStart(16, '0').get(8)
       if (rthis > 0xFFFF) {
         rthis = rthis - 0xFFFF
@@ -120,14 +121,14 @@ object CPU {
       }
       return rthis
   }
-  infix fun Short.ADD(a: Short): Short {
+  fun ADD(a: Short, b: Short): Short {
     setHalfCarry('0')
     setSubstract('0')
     setCarry('0')
     setZero('0')
-    val thirdHL = this.toString(2).padStart(8, '0').get(3)
+    val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (this + a).toShort()
+    var rthis = (b + a).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
     if (rthis > 0xFF.toShort()) {
       rthis = (rthis - 0xFF.toShort()).toShort()
@@ -136,20 +137,20 @@ object CPU {
     when ("$thirdHL$thirdBC$thirdAfter") {
       "100", "010", "111", "110" -> setHalfCarry('1')
     }
-    if (this == 0.toShort()) {
+    if (rthis == 0.toShort()) {
       setZero('1')
     }
     return rthis
   }
-  infix fun Short.ADC(a: Short): Short {
+  fun ADC(a: Short, b: Short): Short {
     val c = if (getCarry() == '1') 1 else 0
     setHalfCarry('0')
     setSubstract('0')
     setCarry('0')
     setZero('0')
-    val thirdHL = this.toString(2).padStart(8, '0').get(3)
+    val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (this + a + c).toShort()
+    var rthis = (b + a + c).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
     if (rthis > 0xFF.toShort()) {
       rthis = (rthis - 0xFF.toShort()).toShort()
@@ -158,19 +159,19 @@ object CPU {
     when ("$thirdHL$thirdBC$thirdAfter") {
       "100", "010", "111", "110" -> setHalfCarry('1')
     }
-    if (this == 0.toShort()) {
+    if (rthis == 0.toShort()) {
       setZero('1')
     }
     return rthis
   }
-  infix fun Short.SUB(a: Short): Short {
+  fun SUB(a: Short, b: Short): Short {
     setHalfCarry('0')
     setSubstract('0')
     setCarry('0')
     setZero('1')
-    val thirdHL = this.toString(2).padStart(8, '0').get(3)
+    val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (this - a).toShort()
+    var rthis = (b - a).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
     if (rthis < 0.toShort()) {
       rthis = (0xff.toShort() - rthis).toShort()
@@ -179,20 +180,20 @@ object CPU {
     when ("$thirdHL$thirdBC$thirdAfter") {
       "100", "010", "111", "110" -> setHalfCarry('1')
     }
-    if (this == 0.toShort()) {
+    if (rthis == 0.toShort()) {
       setZero('1')
     }
     return rthis
   }
-  infix fun Short.SBC(a: Short): Short {
+  fun SBC(a: Short, b: Short): Short {
     val c = if (getCarry() == '1') 1 else 0
     setHalfCarry('0')
     setSubstract('0')
     setCarry('0')
     setZero('1')
-    val thirdHL = this.toString(2).padStart(8, '0').get(3)
+    val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (this - a - c).toShort()
+    var rthis = (b - a - c).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
     if (rthis < 0.toShort()) {
       rthis = (0xFF.toShort() - rthis).toShort()
@@ -201,45 +202,45 @@ object CPU {
     when ("$thirdHL$thirdBC$thirdAfter") {
       "100", "010", "111", "110" -> setHalfCarry('1')
     }
-    if (this == 0.toShort()) {
+    if (rthis == 0.toShort()) {
       setZero('1')
     }
     return rthis
   }
-  infix fun Short.AND(a: Short): Short {
+  fun AND(a: Short, b: Short): Short {
     setZero('0')
     setSubstract('0')
     setHalfCarry('1')
     setCarry('0')
-    val ret = (this.toInt() and a.toInt()).toShort()
+    val ret = (b.toInt() and a.toInt()).toShort()
     if (ret == 0.toShort()) {
       setZero('1')
     }
     return ret
   }
-  infix fun Short.XOR(a: Short): Short {
+  fun XOR(a: Short, b: Short): Short {
     setZero('0')
     setSubstract('0')
     setHalfCarry('0')
     setCarry('0')
-    val ret = (this.toInt() xor a.toInt()).toShort()
+    val ret = (b.toInt() xor a.toInt()).toShort()
     if (ret == 0.toShort()) {
       setZero('1')
     }
     return ret
   }
-  infix fun Short.OR(a: Short): Short {
+  fun OR(a: Short, b: Short): Short {
     setZero('0')
     setSubstract('0')
     setHalfCarry('0')
     setCarry('0')
-    val ret = (this.toInt() or a.toInt()).toShort()
+    val ret = (b.toInt() or a.toInt()).toShort()
     if (ret == 0.toShort()) {
       setZero('1')
     }
     return ret
   }
-  private fun rl(a: Short): Short {
+  internal fun rl(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
@@ -254,7 +255,7 @@ object CPU {
     }
     return ret
   }
-  private fun rlc(a: Short): Short {
+  internal fun rlc(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
@@ -269,7 +270,7 @@ object CPU {
     return ret
   }
 
-  private fun rr(a: Short): Short {
+  internal fun rr(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
@@ -284,7 +285,7 @@ object CPU {
     }
     return ret
   }
-  private fun rrc(a: Short): Short {
+  internal fun rrc(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
@@ -299,7 +300,7 @@ object CPU {
     return ret
   }
 
-  private fun sla(a: Short): Short {
+  internal fun sla(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
@@ -311,7 +312,7 @@ object CPU {
     }
     return ret
   }
-  private fun sra(a: Short): Short {
+  internal fun sra(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
@@ -323,7 +324,7 @@ object CPU {
     }
     return ret
   }
-  private fun srl(a: Short): Short {
+  internal fun srl(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
@@ -336,7 +337,7 @@ object CPU {
     return ret
   }
 
-  private fun swap(a: Short): Short {
+  internal fun swap(a: Short): Short {
     setZero('0')
     setHalfCarry('0')
     setSubstract('0')
@@ -356,32 +357,32 @@ object CPU {
     val ret = if (an == '1') '0' else '1'
     return ret
   }
-  private fun SET(a: Short, c: Int): Short {
+  internal fun SET(a: Short, c: Int): Short {
     val an = a.toString(2).padStart(8, '0')
     val ret = an.substring(0, 7 - c) + '1' + an.substring(c)
     return ret.toShort(2)
   }
-  private fun RES(a: Short, c: Int): Short {
+  internal fun RES(a: Short, c: Int): Short {
     val an = a.toString(2).padStart(8, '0')
     val ret = an.substring(0, 7 - c) + '1' + an.substring(c)
     return ret.toShort(2)
   }
 
-  var PC: Int
+  internal var PC: Int
     get() = joinHighByteLowByte(PCh, PCl)
     set(x: Int) {
       val (nb, nc) = splitHighByteLowByte(x)
       PCh = nb
       PCl = nc
     }
-  private var AF: Int
+  internal var AF: Int
     get() = joinHighByteLowByte(A, F)
     set(x: Int) {
       val (nb, nc) = splitHighByteLowByte(x)
       A = nb
       F = nc
     }
-  private var BC: Int
+  internal var BC: Int
     get() = joinHighByteLowByte(B, C)
     set(x: Int) {
       val (nb, nc) = splitHighByteLowByte(x)
@@ -389,7 +390,7 @@ object CPU {
       C = nc
     }
 
-  private var DE: Int
+  internal var DE: Int
     get() = joinHighByteLowByte(D, E)
     set(x: Int) {
       val (nb, nc) = splitHighByteLowByte(x)
@@ -397,26 +398,26 @@ object CPU {
       E = nc
     }
 
-  private var HL: Int
+  internal var HL: Int
     get() = joinHighByteLowByte(H, L)
     set(x: Int) {
       val (nb, nc) = splitHighByteLowByte(x)
       H = nb
       L = nc
     }
-  private fun getNextWord(): Int {
+  internal fun getNextWord(): Int {
     val a = RAM.getByteAt(PC)
     ++PC
     val b = RAM.getByteAt(PC)
     ++PC
     return joinHighByteLowByte(b, a)
   }
-  private val opcodes: Map<Int, ()->Int> = mapOf(
+  internal val opcodes: Map<Int, ()->Int> = mapOf(
     0x00 to { 4 }, //NOP
     0x01 to { BC = getNextWord(); 12 },
     0x02 to { RAM.setByteAt(BC, A); 8 }, //ld (BC), A
-    0x03 to { BC = BC.INC(); 8 }, //inc BC
-    0x04 to { B = B.INC(); 4 }, //inc B
+    0x03 to { BC = INC(BC); 8 }, //inc BC
+    0x04 to { B = INC(B); 4 }, //inc B
     0x05 to { B = B.DEC(); 4 }, //dec B
     0x06 to { B = RAM.getByteAt(PC++); 8 }, //ld B, d8
     0x07 to { A = rlc(A); 4 }, // RLCA
@@ -428,7 +429,7 @@ object CPU {
     0x09 to { HL = (HL ADD BC); 8 }, //ADD HL, BC    
     0x0a to { A = RAM.getByteAt(BC); 8 },
     0x0b to { BC = BC.DEC(); 8 }, //DEC BC
-    0x0c to { C = C.INC(); 4 }, //INC C
+    0x0c to { C = INC(C); 4 }, //INC C
     0x0d to { C = C.DEC(); 4 }, //DEC C
     0x0e to { C = RAM.getByteAt(PC++); 8 }, //ld C, d8
     0x0f to { A = rrc(A); 4 },
@@ -438,8 +439,8 @@ object CPU {
     },
     0x11 to { DE = getNextWord(); 12 }, //ld DE, d16
     0x12 to { RAM.setByteAt(DE, A); 8 }, //ld (DE), A
-    0x13 to { DE = DE.INC(); 8 }, // inc DE 
-    0x14 to { D = D.INC(); 4 }, //inc d
+    0x13 to { DE = INC(DE); 8 }, // inc DE 
+    0x14 to { D = INC(D); 4 }, //inc d
     0x15 to { D = D.DEC(); 4 }, //dec d
     0x16 to { D = RAM.getByteAt(PC++); 8 }, //ld D,d8
     0x17 to { A = rl(A); 4 }, //rla
@@ -447,7 +448,7 @@ object CPU {
     0x19 to { HL = (HL ADD DE); 8 }, // ADD HL,DE
     0x1a to { A = RAM.getByteAt(DE); 8 }, //ld A,(DE)
     0x1b to { DE = DE.DEC(); 8 },
-    0x1c to { E = E.INC(); 4 },
+    0x1c to { E = INC(E); 4 },
     0x1d to { E = E.DEC(); 4 },
     0x1e to { E = RAM.getByteAt(PC++); 8 },
     0x1f to { A = rr(A); 4 },
@@ -463,11 +464,11 @@ object CPU {
     0x21 to { HL = getNextWord(); 12 },
     0x22 to {
       RAM.setByteAt(HL, A)
-      HL = HL.INC()
+      HL = INC(HL)
       8
     },
-    0x23 to { HL = HL.INC(); 8 },
-    0x24 to { H = H.INC(); 4 },
+    0x23 to { HL = INC(HL); 8 },
+    0x24 to { H = INC(HL); 4 },
     0x25 to { H = H.DEC(); 4 },
     0x26 to { H = RAM.getByteAt(PC++); 8 },
     0x27 to { //daa
@@ -502,12 +503,12 @@ object CPU {
     0x29 to { HL = (HL ADD HL); 8 },
     0x2a to {
       A = RAM.getByteAt(HL)
-      HL = HL.INC()
+      HL = INC(HL)
       8
     },
     0x2b to { HL = HL.DEC(); 8 },
-    0x2c to { L = L.INC(); 4 },
-    0x2d to { L = L.DEC(); 4 },
+    0x2c to { L = INC(L); 4 },
+    0x2d to { L = DEC(L); 4 },
     0x2e to { L = RAM.getByteAt(PC++); 8 },
     0x2f to {
       setHalfCarry('1')
@@ -531,8 +532,8 @@ object CPU {
       HL = HL.DEC()
       8
     },
-    0x33 to { SP = SP.INC(); 8 },
-    0x34 to { RAM.setByteAt(HL, RAM.getByteAt(HL).INC()); 12 },
+    0x33 to { SP = INC(SP); 8 },
+    0x34 to { RAM.setByteAt(HL, INC(RAM.getByteAt(HL))); 12 },
     0x35 to { RAM.setByteAt(HL, RAM.getByteAt(HL).DEC()); 12 },
     0x36 to { RAM.setByteAt(HL, RAM.getByteAt(PC++)); 12 },
     0x37 to {
@@ -557,7 +558,7 @@ object CPU {
       8
     },
     0x3b to { SP = SP.DEC(); 8 },
-    0x3c to { A = A.INC(); 4 },
+    0x3c to { A = INC(A); 4 },
     0x3d to { A = A.DEC(); 4 },
     0x3e to { A = RAM.getByteAt(PC++); 8 },
     0x3f to {
@@ -978,7 +979,7 @@ object CPU {
       16
     }
   )
-  private val prefixOpcodes: Map<Int, ()->Int> = mapOf(
+  internal val prefixOpcodes: Map<Int, ()->Int> = mapOf(
     0x00 to { B = rlc(B); 4 },
     0x01 to { C = rlc(C); 4 },
     0x02 to { D = rlc(D); 4 },
@@ -1236,7 +1237,7 @@ object CPU {
     0xfe to { RAM.setByteAt(HL, SET(RAM.getByteAt(HL), 7)); 16 },
     0xff to { A = SET(A, 7); 8 }
   )
-  private fun INT(addr: Int) {
+  internal fun INT(addr: Int) {
     interrupts = false
     RAM.setByteAt(SP - 1, PCh)
     RAM.setByteAt(SP - 2, PCl)

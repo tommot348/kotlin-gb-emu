@@ -1,4 +1,4 @@
-package de.prt.gb
+package de.prt.gb.hardware
 
 object RAM {
   val ram = Array(65536, { 0.toShort() })

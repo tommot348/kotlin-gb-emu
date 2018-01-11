@@ -1,4 +1,4 @@
-package de.prt.gb
+package de.prt.gb.hardware
 import javax.swing.SwingUtilities
 import javax.swing.JFrame
 import javax.swing.JPanel
@@ -13,7 +13,7 @@ private class FrameBuffer : JPanel() {
     setBorder(BorderFactory.createLineBorder(Color.black))
   }
   override fun getPreferredSize(): Dimension {
-    return Dimension(320, 288)
+    return Dimension(640, 576)
   }
   override fun paintComponent(g: Graphics) {
     super.paintComponent(g)
@@ -24,11 +24,11 @@ private class FrameBuffer : JPanel() {
         1 -> g.setColor(Color.LIGHT_GRAY)
         0 -> g.setColor(Color.WHITE)
       }
-      g.fillRect((i % 160) * 2, (i / 160) * 2, 2, 2)
+      g.fillRect((i % 160) * 4, (i / 160) * 4, 4, 4)
     })
   }
 }
-class Display : JFrame("Test") {
+internal class Display : JFrame("Test") {
   private val fb = FrameBuffer()
   init {
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
