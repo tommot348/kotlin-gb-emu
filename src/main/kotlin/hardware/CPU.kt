@@ -27,76 +27,76 @@ object CPU {
       return ((a * 256) + b).toInt()
   }
 
-  internal fun getCarry(): Char = F.toString(2).padStart(8, '0').get(3)
-  internal fun setCarry(c: Char) {
+  internal fun getCarry(): Boolean = F.toString(2).padStart(8, '0').get(3) == '1'
+  internal fun setCarry(c: Boolean) {
     when (c) {
-      '0' -> F = (F.toInt() and 0b11100000).toShort()
-      '1' -> F = (F.toInt() or 0b00010000).toShort()
+      false -> F = (F.toInt() and 0b11100000).toShort()
+      true -> F = (F.toInt() or 0b00010000).toShort()
     }
   }
-  internal fun getHalfCarry(): Char = F.toString(2).padStart(8, '0').get(2)
-  internal fun setHalfCarry(c: Char) {
+  internal fun getHalfCarry(): Boolean = F.toString(2).padStart(8, '0').get(2) == '1'
+  internal fun setHalfCarry(c: Boolean) {
     when (c) {
-      '0' -> F = (F.toInt() and 0b11010000).toShort()
-      '1' -> F = (F.toInt() or 0b00100000).toShort()
+      false -> F = (F.toInt() and 0b11010000).toShort()
+      true -> F = (F.toInt() or 0b00100000).toShort()
     }
   }
-  internal fun getSubstract(): Char = F.toString(2).padStart(8, '0').get(1)
-  internal fun setSubstract(c: Char) {
+  internal fun getSubstract(): Boolean = F.toString(2).padStart(8, '0').get(1) == '1'
+  internal fun setSubstract(c: Boolean) {
     when (c) {
-      '0' -> F = (F.toInt() and 0b10110000).toShort()
-      '1' -> F = (F.toInt() or 0b01000000).toShort()
+      false -> F = (F.toInt() and 0b10110000).toShort()
+      true -> F = (F.toInt() or 0b01000000).toShort()
     }
   }
-  internal fun getZero(): Char = F.toString(2).padStart(8, '0').get(0)
-  internal fun setZero(c: Char) {
+  internal fun getZero(): Boolean = F.toString(2).padStart(8, '0').get(0) == '1'
+  internal fun setZero(c: Boolean) {
     when (c) {
-      '0' -> F = (F.toInt() and 0b01110000).toShort()
-      '1' -> F = (F.toInt() or 0b10000000).toShort()
+      false -> F = (F.toInt() and 0b01110000).toShort()
+      true -> F = (F.toInt() or 0b10000000).toShort()
     }
   }
-  fun INC(a: Short): Short {
-      setZero('0')
-      setHalfCarry('0')
-      setSubstract('0')
+  internal fun INC(a: Short): Short {
+      setZero(false)
+      setHalfCarry(false)
+      setSubstract(false)
       val fourth = a.toString(2).padStart(8, '0').get(4)
       var rthis = (a + 1).toShort()
       if (rthis > 255.toShort() || rthis == 0.toShort()) {
         rthis = 0.toShort()
-        setZero('1')
+        setZero(true)
       }
       val fourthAfter = rthis.toString(2).padStart(8, '0').get(4)
       if (fourth != fourthAfter) {
-        setHalfCarry('1')
+        setHalfCarry(true)
       }
       return rthis
   }
-  fun DEC(a: Short): Short {
+  internal fun DEC(a: Short): Short {
     val fourth = a.toString(2).padStart(8, '0').get(4)
     var rthis = (a - 1).toShort()
-    setZero('0')
-    setHalfCarry('0')
+    setZero(false)
+    setHalfCarry(false)
     if (rthis < (0.toShort())) {
       rthis = 255.toShort()
     }
     if (rthis == 0.toShort()) {
-      setZero('1')
+      setZero(true)
     }
     val fourthAfter = rthis.toString(2).padStart(8, '0').get(4)
     if (fourthAfter != fourth) {
-      setHalfCarry('1')
+      setHalfCarry(true)
     }
-    setSubstract('1')
+    setSubstract(true)
     return rthis
   }
-  fun INC(a: Int): Int {
+  internal fun INC(a: Int): Int {
     var rthis = a + 1
     if (rthis > 0xFFFF) {
       rthis = 0
     }
     return rthis
   }
-  fun DEC(a: Int): Int {
+  internal fun DEC(a: Int): Int {
     var rthis = a - 1
     if (rthis < 0) {
       rthis = 0xFFFF
@@ -104,255 +104,255 @@ object CPU {
     return rthis
   }
 
-  fun ADD(a: Int, b: Int): Int {
-      setHalfCarry('0')
-      setSubstract('0')
-      setCarry('0')
+  internal fun ADD(a: Int, b: Int): Int {
+      setHalfCarry(false)
+      setSubstract(false)
+      setCarry(false)
       val eighthHL = b.toString(2).padStart(16, '0').get(8)
       val eighthBC = a.toString(2).padStart(16, '0').get(8)
       var rthis = b + a
       val eighthAfter = rthis.toString(2).padStart(16, '0').get(8)
       if (rthis > 0xFFFF) {
-        rthis = rthis - 0xFFFF
-        setCarry('1')
+        rthis = rthis - 0x10000
+        setCarry(true)
       }
       when ("$eighthHL$eighthBC$eighthAfter") {
-        "100", "010", "111", "110" -> setHalfCarry('1')
+        "100", "010", "111", "110" -> setHalfCarry(true)
       }
       return rthis
   }
-  fun ADD(a: Short, b: Short): Short {
-    setHalfCarry('0')
-    setSubstract('0')
-    setCarry('0')
-    setZero('0')
+  internal fun ADD(a: Short, b: Short): Short {
+    setHalfCarry(false)
+    setSubstract(false)
+    setCarry(false)
+    setZero(false)
     val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (b + a).toShort()
+    var rthis: Short = (b + a).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
-    if (rthis > 0xFF.toShort()) {
-      rthis = (rthis - 0xFF.toShort()).toShort()
-      setCarry('1')
+    if (rthis > 0xFF) {
+      rthis = (rthis - 0x100).toShort()
+      setCarry(true)
     }
     when ("$thirdHL$thirdBC$thirdAfter") {
-      "100", "010", "111", "110" -> setHalfCarry('1')
+      "100", "010", "111", "110" -> setHalfCarry(true)
     }
     if (rthis == 0.toShort()) {
-      setZero('1')
+      setZero(true)
     }
     return rthis
   }
-  fun ADC(a: Short, b: Short): Short {
-    val c = if (getCarry() == '1') 1 else 0
-    setHalfCarry('0')
-    setSubstract('0')
-    setCarry('0')
-    setZero('0')
+  internal fun ADC(a: Short, b: Short): Short {
+    val c = if (getCarry()) 1 else 0
+    setHalfCarry(false)
+    setSubstract(false)
+    setCarry(false)
+    setZero(false)
     val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
     var rthis = (b + a + c).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
-    if (rthis > 0xFF.toShort()) {
-      rthis = (rthis - 0xFF.toShort()).toShort()
-      setCarry('1')
+    if (rthis > 0xFF) {
+      rthis = (rthis - 0x100).toShort()
+      setCarry(true)
     }
     when ("$thirdHL$thirdBC$thirdAfter") {
-      "100", "010", "111", "110" -> setHalfCarry('1')
+      "100", "010", "111", "110" -> setHalfCarry(true)
     }
     if (rthis == 0.toShort()) {
-      setZero('1')
+      setZero(true)
     }
     return rthis
   }
-  fun SUB(a: Short, b: Short): Short {
-    setHalfCarry('0')
-    setSubstract('0')
-    setCarry('0')
-    setZero('1')
+  internal fun SUB(a: Short, b: Short): Short {
+    setHalfCarry(false)
+    setSubstract(false)
+    setCarry(false)
+    setZero(true)
     val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (b - a).toShort()
+    var rthis = (a - b).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
-    if (rthis < 0.toShort()) {
-      rthis = (0xff.toShort() - rthis).toShort()
-      setCarry('1')
+    if (rthis < 0) {
+      rthis = (0x100 + rthis).toShort()
+      setCarry(true)
     }
     when ("$thirdHL$thirdBC$thirdAfter") {
-      "100", "010", "111", "110" -> setHalfCarry('1')
+      "100", "010", "111", "110" -> setHalfCarry(true)
     }
     if (rthis == 0.toShort()) {
-      setZero('1')
+      setZero(true)
     }
     return rthis
   }
-  fun SBC(a: Short, b: Short): Short {
-    val c = if (getCarry() == '1') 1 else 0
-    setHalfCarry('0')
-    setSubstract('0')
-    setCarry('0')
-    setZero('1')
+  internal fun SBC(a: Short, b: Short): Short {
+    val c = if (getCarry()) 1 else 0
+    setHalfCarry(false)
+    setSubstract(false)
+    setCarry(false)
+    setZero(true)
     val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (b - a - c).toShort()
+    var rthis = (a - b - c).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
-    if (rthis < 0.toShort()) {
-      rthis = (0xFF.toShort() - rthis).toShort()
-      setCarry('1')
+    if (rthis < 0) {
+      rthis = (0x100 + rthis).toShort()
+      setCarry(true)
     }
     when ("$thirdHL$thirdBC$thirdAfter") {
-      "100", "010", "111", "110" -> setHalfCarry('1')
+      "100", "010", "111", "110" -> setHalfCarry(true)
     }
     if (rthis == 0.toShort()) {
-      setZero('1')
+      setZero(true)
     }
     return rthis
   }
-  fun AND(a: Short, b: Short): Short {
-    setZero('0')
-    setSubstract('0')
-    setHalfCarry('1')
-    setCarry('0')
+  internal fun AND(a: Short, b: Short): Short {
+    setZero(false)
+    setSubstract(false)
+    setHalfCarry(true)
+    setCarry(false)
     val ret = (b.toInt() and a.toInt()).toShort()
     if (ret == 0.toShort()) {
-      setZero('1')
+      setZero(true)
     }
     return ret
   }
-  fun XOR(a: Short, b: Short): Short {
-    setZero('0')
-    setSubstract('0')
-    setHalfCarry('0')
-    setCarry('0')
+  internal fun XOR(a: Short, b: Short): Short {
+    setZero(false)
+    setSubstract(false)
+    setHalfCarry(false)
+    setCarry(false)
     val ret = (b.toInt() xor a.toInt()).toShort()
     if (ret == 0.toShort()) {
-      setZero('1')
+      setZero(true)
     }
     return ret
   }
-  fun OR(a: Short, b: Short): Short {
-    setZero('0')
-    setSubstract('0')
-    setHalfCarry('0')
-    setCarry('0')
+  internal fun OR(a: Short, b: Short): Short {
+    setZero(false)
+    setSubstract(false)
+    setHalfCarry(false)
+    setCarry(false)
     val ret = (b.toInt() or a.toInt()).toShort()
     if (ret == 0.toShort()) {
-      setZero('1')
+      setZero(true)
     }
     return ret
   }
   internal fun rl(a: Short): Short {
-    setZero('0')
-    setHalfCarry('0')
-    setSubstract('0')
+    setZero(false)
+    setHalfCarry(false)
+    setSubstract(false)
     val an = a.toString(2).padStart(8, '0')
     val c = getCarry()
-    setCarry(an.first())
+    setCarry(an.first() == '1')
     val ret = (an.substring(1) + c).toShort(2)
     if (prefix) {
       if (ret.toInt() == 0) {
-        setZero('1')
+        setZero(true)
       }
     }
     return ret
   }
   internal fun rlc(a: Short): Short {
-    setZero('0')
-    setHalfCarry('0')
-    setSubstract('0')
+    setZero(false)
+    setHalfCarry(false)
+    setSubstract(false)
     val an = a.toString(2).padStart(8, '0')
-    setCarry(an.first())
+    setCarry(an.first() == '1')
     val ret = (an.substring(1) + an.first()).toShort(2)
     if (prefix) {
       if (ret.toInt() == 0) {
-        setZero('1')
+        setZero(true)
       }
     }
     return ret
   }
 
   internal fun rr(a: Short): Short {
-    setZero('0')
-    setHalfCarry('0')
-    setSubstract('0')
+    setZero(false)
+    setHalfCarry(false)
+    setSubstract(false)
     val an = a.toString(2).padStart(8, '0')
-    val c = getCarry()
-    setCarry(an.last())
-    val ret = (c + an.substring(1)).toShort(2)
+    val c = if (getCarry()) '1' else '0'
+    setCarry(an.last() == '1')
+    val ret = ( c + an.substring(1)).toShort(2)
     if (prefix) {
       if (ret.toInt() == 0) {
-        setZero('1')
+        setZero(true)
       }
     }
     return ret
   }
   internal fun rrc(a: Short): Short {
-    setZero('0')
-    setHalfCarry('0')
-    setSubstract('0')
+    setZero(false)
+    setHalfCarry(false)
+    setSubstract(false)
     val an = a.toString(2).padStart(8, '0')
-    setCarry(an.last())
+    setCarry(an.last() == '1')
     val ret = (an.last() + an.substring(0, an.length - 1)).toShort(2)
     if (prefix) {
       if (ret.toInt() == 0) {
-        setZero('1')
+        setZero(true)
       }
     }
     return ret
   }
 
   internal fun sla(a: Short): Short {
-    setZero('0')
-    setHalfCarry('0')
-    setSubstract('0')
+    setZero(false)
+    setHalfCarry(false)
+    setSubstract(false)
     val an = a.toString(2).padStart(8, '0')
-    setCarry(an.first())
+    setCarry(an.first() == '1')
     val ret = (an.substring(1) + "0").toShort(2)
     if (ret.toInt() == 0) {
-      setZero('1')
+      setZero(true)
     }
     return ret
   }
   internal fun sra(a: Short): Short {
-    setZero('0')
-    setHalfCarry('0')
-    setSubstract('0')
+    setZero(false)
+    setHalfCarry(false)
+    setSubstract(false)
     val an = a.toString(2).padStart(8, '0')
-    setCarry(an.last())
+    setCarry(an.last() == '1')
     val ret = (an.first() + an.substring(0, an.length - 1)).toShort(2)
     if (ret.toInt() == 0) {
-      setZero('1')
+      setZero(true)
     }
     return ret
   }
   internal fun srl(a: Short): Short {
-    setZero('0')
-    setHalfCarry('0')
-    setSubstract('0')
+    setZero(false)
+    setHalfCarry(false)
+    setSubstract(false)
     val an = a.toString(2).padStart(8, '0')
-    setCarry(an.last())
+    setCarry(an.last() == '1')
     val ret = ('0' + an.substring(0, an.length - 1)).toShort(2)
     if (ret.toInt() == 0) {
-      setZero('1')
+      setZero(true)
     }
     return ret
   }
 
   internal fun swap(a: Short): Short {
-    setZero('0')
-    setHalfCarry('0')
-    setSubstract('0')
-    setCarry('0')
+    setZero(false)
+    setHalfCarry(false)
+    setSubstract(false)
+    setCarry(false)
     val an = a.toString(2).padStart(8, '0')
     val ret = (an.substring(4) + an.substring(0, 4)).toShort(2)
     if (ret.toInt() == 0) {
-      setZero('1')
+      setZero(true)
     }
     return ret
   }
 
   fun BIT(a: Short, c: Int): Char {
-    setHalfCarry('1')
-    setSubstract('0')
+    setHalfCarry(true)
+    setSubstract(false)
     val an = a.toString(2).padStart(8, '0').get(7 - c)
     val ret = if (an == '1') '0' else '1'
     return ret
@@ -418,7 +418,7 @@ object CPU {
     0x02 to { RAM.setByteAt(BC, A); 8 }, //ld (BC), A
     0x03 to { BC = INC(BC); 8 }, //inc BC
     0x04 to { B = INC(B); 4 }, //inc B
-    0x05 to { B = B.DEC(); 4 }, //dec B
+    0x05 to { B = DEC(B); 4 }, //dec B
     0x06 to { B = RAM.getByteAt(PC++); 8 }, //ld B, d8
     0x07 to { A = rlc(A); 4 }, // RLCA
     0x08 to {
@@ -426,11 +426,11 @@ object CPU {
       RAM.setWordAt(a, SP)
       20
     },
-    0x09 to { HL = (HL ADD BC); 8 }, //ADD HL, BC    
+    0x09 to { HL = ADD(HL, BC); 8 }, //ADD HL, BC    
     0x0a to { A = RAM.getByteAt(BC); 8 },
-    0x0b to { BC = BC.DEC(); 8 }, //DEC BC
+    0x0b to { BC = DEC(BC); 8 }, //DEC BC
     0x0c to { C = INC(C); 4 }, //INC C
-    0x0d to { C = C.DEC(); 4 }, //DEC C
+    0x0d to { C = DEC(C); 4 }, //DEC C
     0x0e to { C = RAM.getByteAt(PC++); 8 }, //ld C, d8
     0x0f to { A = rrc(A); 4 },
     0x10 to {
@@ -441,19 +441,19 @@ object CPU {
     0x12 to { RAM.setByteAt(DE, A); 8 }, //ld (DE), A
     0x13 to { DE = INC(DE); 8 }, // inc DE 
     0x14 to { D = INC(D); 4 }, //inc d
-    0x15 to { D = D.DEC(); 4 }, //dec d
+    0x15 to { D = DEC(D); 4 }, //dec d
     0x16 to { D = RAM.getByteAt(PC++); 8 }, //ld D,d8
     0x17 to { A = rl(A); 4 }, //rla
     0x18 to { PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1; 12 }, //JR r8
-    0x19 to { HL = (HL ADD DE); 8 }, // ADD HL,DE
+    0x19 to { HL = ADD(HL, DE); 8 }, // ADD HL,DE
     0x1a to { A = RAM.getByteAt(DE); 8 }, //ld A,(DE)
-    0x1b to { DE = DE.DEC(); 8 },
+    0x1b to { DE = DEC(DE); 8 },
     0x1c to { E = INC(E); 4 },
-    0x1d to { E = E.DEC(); 4 },
+    0x1d to { E = DEC(E); 4 },
     0x1e to { E = RAM.getByteAt(PC++); 8 },
     0x1f to { A = rr(A); 4 },
     0x20 to { //JR NZ,d8
-      if (getZero() == '0') {
+      if (!getZero()) {
         PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1
         12
       } else {
@@ -468,23 +468,23 @@ object CPU {
       8
     },
     0x23 to { HL = INC(HL); 8 },
-    0x24 to { H = INC(HL); 4 },
-    0x25 to { H = H.DEC(); 4 },
+    0x24 to { H = INC(H); 4 },
+    0x25 to { H = DEC(H); 4 },
     0x26 to { H = RAM.getByteAt(PC++); 8 },
     0x27 to { //daa
-      setCarry('0')
+      setCarry(false)
       val a = A.toString(2).substring(4).toInt(2)
-      if (a > 9 || getHalfCarry() == '1') {
+      if (a > 9 || getHalfCarry()) {
         A = (A + 0x06.toShort()).toShort()
       }
       val b = A.toString(2).substring(0, 4).toInt(2)
-      if (b > 9 || getCarry() == '1') {
+      if (b > 9 || getCarry()) {
         A = (A + 0x60.toShort()).toShort()
-        setCarry('1')
+        setCarry(true)
       }
-      setHalfCarry('0')
+      setHalfCarry(false)
       if ( A == 0.toShort()) {
-        setZero('1')
+        setZero(true)
       }
       if (A > 0xFF.toShort()) {
         A = (A - 0xFF.toShort()).toShort()
@@ -492,7 +492,7 @@ object CPU {
       4
     },
     0x28 to { // JP Z, a8
-      if (getZero() == '1') {
+      if (getZero()) {
         PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1
         16
       } else {
@@ -500,25 +500,25 @@ object CPU {
         12
       }
     },
-    0x29 to { HL = (HL ADD HL); 8 },
+    0x29 to { HL = ADD(HL, HL); 8 },
     0x2a to {
       A = RAM.getByteAt(HL)
       HL = INC(HL)
       8
     },
-    0x2b to { HL = HL.DEC(); 8 },
+    0x2b to { HL = DEC(HL); 8 },
     0x2c to { L = INC(L); 4 },
     0x2d to { L = DEC(L); 4 },
     0x2e to { L = RAM.getByteAt(PC++); 8 },
     0x2f to {
-      setHalfCarry('1')
-      setSubstract('1')
+      setHalfCarry(true)
+      setSubstract(true)
       val a = 0xFFFFFF + A.toInt()
       A = a.inv().toShort()
       4
     },
     0x30 to {
-      if (getCarry() == '0') {
+      if (!getCarry()) {
         PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1
         12
       } else {
@@ -529,21 +529,21 @@ object CPU {
     0x31 to { SP = getNextWord(); 12 },
     0x32 to {
       RAM.setByteAt(HL, A)
-      HL = HL.DEC()
+      HL = DEC(HL)
       8
     },
     0x33 to { SP = INC(SP); 8 },
     0x34 to { RAM.setByteAt(HL, INC(RAM.getByteAt(HL))); 12 },
-    0x35 to { RAM.setByteAt(HL, RAM.getByteAt(HL).DEC()); 12 },
+    0x35 to { RAM.setByteAt(HL, DEC(RAM.getByteAt(HL))); 12 },
     0x36 to { RAM.setByteAt(HL, RAM.getByteAt(PC++)); 12 },
     0x37 to {
-      setCarry('1')
-      setSubstract('0')
-      setHalfCarry('0')
+      setCarry(true)
+      setSubstract(false)
+      setHalfCarry(false)
       4
     },
     0x38 to {
-      if (getCarry() == '1') {
+      if (getCarry()) {
         PC = PC + RAM.getByteAt(PC) + 1
         12
       } else {
@@ -551,23 +551,23 @@ object CPU {
         8
       }
     },
-    0x39 to { HL = (HL ADD SP); 8 },
+    0x39 to { HL = ADD(HL, SP); 8 },
     0x3a to {
       A = RAM.getByteAt(HL)
-      HL = HL.DEC()
+      HL = DEC(HL)
       8
     },
-    0x3b to { SP = SP.DEC(); 8 },
+    0x3b to { SP = DEC(SP); 8 },
     0x3c to { A = INC(A); 4 },
-    0x3d to { A = A.DEC(); 4 },
+    0x3d to { A = DEC(A); 4 },
     0x3e to { A = RAM.getByteAt(PC++); 8 },
     0x3f to {
-      setHalfCarry('0')
-      setSubstract('0')
+      setHalfCarry(false)
+      setSubstract(false)
       val a = getCarry()
-      setCarry('0')
-      if ( a == '0' ) {
-        setCarry('1')
+      setCarry(false)
+      if ( !a ) {
+        setCarry(true)
       }
       4
     },
@@ -635,72 +635,72 @@ object CPU {
     0x7d to { A = L; 4 },
     0x7e to { A = RAM.getByteAt(HL); 8 },
     0x7f to { A = A; 4 },
-    0x80 to { A = (A ADD B); 4 },
-    0x81 to { A = (A ADD C); 4 },
-    0x82 to { A = (A ADD D); 4 },
-    0x83 to { A = (A ADD E); 4 },
-    0x84 to { A = (A ADD H); 4 },
-    0x85 to { A = (A ADD L); 4 },
-    0x86 to { A = (A ADD RAM.getByteAt(HL)); 8 },
-    0x87 to { A = (A ADD A); 4 },
-    0x88 to { A = (A ADC B); 4 },
-    0x89 to { A = (A ADC C); 4 },
-    0x8a to { A = (A ADC D); 4 },
-    0x8b to { A = (A ADC E); 4 },
-    0x8c to { A = (A ADC H); 4 },
-    0x8d to { A = (A ADC L); 4 },
-    0x8e to { A = (A ADC RAM.getByteAt(HL)); 8 },
-    0x8f to { A = (A ADC A); 4 },
-    0x90 to { A = (A SUB B); 4 },
-    0x91 to { A = (A SUB C); 4 },
-    0x92 to { A = (A SUB D); 4 },
-    0x93 to { A = (A SUB E); 4 },
-    0x94 to { A = (A SUB H); 4 },
-    0x95 to { A = (A SUB L); 4 },
-    0x96 to { A = (A SUB RAM.getByteAt(HL)); 8 },
-    0x97 to { A = (A SUB A); 4 },
-    0x98 to { A = (A SBC B); 4 },
-    0x99 to { A = (A SBC C); 4 },
-    0x9a to { A = (A SBC D); 4 },
-    0x9b to { A = (A SBC E); 4 },
-    0x9c to { A = (A SBC H); 4 },
-    0x9d to { A = (A SBC L); 4 },
-    0x9e to { A = (A SBC RAM.getByteAt(HL)); 8 },
-    0x9f to { A = (A SBC A); 4 },
-    0xa0 to { A = (A AND B); 4 },
-    0xa1 to { A = (A AND C); 4 },
-    0xa2 to { A = (A AND D); 4 },
-    0xa3 to { A = (A AND E); 4 },
-    0xa4 to { A = (A AND H); 4 },
-    0xa5 to { A = (A AND L); 4 },
-    0xa6 to { A = (A AND RAM.getByteAt(HL)); 8 },
-    0xa7 to { A = (A AND A); 4 },
-    0xa8 to { A = (A XOR B); 4 },
-    0xa9 to { A = (A XOR C); 4 },
-    0xaa to { A = (A XOR D); 4 },
-    0xab to { A = (A XOR E); 4 },
-    0xac to { A = (A XOR H); 4 },
-    0xad to { A = (A XOR L); 4 },
-    0xae to { A = (A XOR RAM.getByteAt(HL)); 8 },
-    0xaf to { A = (A XOR A); 4 },
-    0xb0 to { A = (A OR B); 4 },
-    0xb1 to { A = (A OR C); 4 },
-    0xb2 to { A = (A OR D); 4 },
-    0xb3 to { A = (A OR E); 4 },
-    0xb4 to { A = (A OR H); 4 },
-    0xb5 to { A = (A OR L); 4 },
-    0xb6 to { A = (A OR RAM.getByteAt(HL)); 8 },
-    0xb7 to { A = (A OR A); 4 },
-    0xb8 to { (A SUB B); 4 },
-    0xb9 to { (A SUB C); 4 },
-    0xba to { (A SUB D); 4 },
-    0xbb to { (A SUB E); 4 },
-    0xbc to { (A SUB H); 4 },
-    0xbd to { (A SUB L); 4 },
-    0xbe to { (A SUB RAM.getByteAt(HL)); 8 },
-    0xbf to { (A SUB A); 4 },
+    0x80 to { A = ADD(A, B); 4 },
+    0x81 to { A = ADD(A, C); 4 },
+    0x82 to { A = ADD(A, D); 4 },
+    0x83 to { A = ADD(A, E); 4 },
+    0x84 to { A = ADD(A, H); 4 },
+    0x85 to { A = ADD(A, L); 4 },
+    0x86 to { A = ADD(A, RAM.getByteAt(HL)); 8 },
+    0x87 to { A = ADD(A, A); 4 },
+    0x88 to { A = ADC(A, B); 4 },
+    0x89 to { A = ADC(A, C); 4 },
+    0x8a to { A = ADC(A, D); 4 },
+    0x8b to { A = ADC(A, E); 4 },
+    0x8c to { A = ADC(A, H); 4 },
+    0x8d to { A = ADC(A, L); 4 },
+    0x8e to { A = ADC(A, RAM.getByteAt(HL)); 8 },
+    0x8f to { A = ADC(A, A); 4 },
+    0x90 to { A = SUB(A, B); 4 },
+    0x91 to { A = SUB(A, C); 4 },
+    0x92 to { A = SUB(A, D); 4 },
+    0x93 to { A = SUB(A, E); 4 },
+    0x94 to { A = SUB(A, H); 4 },
+    0x95 to { A = SUB(A, L); 4 },
+    0x96 to { A = SUB(A, RAM.getByteAt(HL)); 8 },
+    0x97 to { A = SUB(A, A); 4 },
+    0x98 to { A = SBC(A, B); 4 },
+    0x99 to { A = SBC(A, C); 4 },
+    0x9a to { A = SBC(A, D); 4 },
+    0x9b to { A = SBC(A, E); 4 },
+    0x9c to { A = SBC(A, H); 4 },
+    0x9d to { A = SBC(A, L); 4 },
+    0x9e to { A = SBC(A, RAM.getByteAt(HL)); 8 },
+    0x9f to { A = SBC(A, A); 4 },
+    0xa0 to { A = AND(A, B); 4 },
+    0xa1 to { A = AND(A, C); 4 },
+    0xa2 to { A = AND(A, D); 4 },
+    0xa3 to { A = AND(A, E); 4 },
+    0xa4 to { A = AND(A, H); 4 },
+    0xa5 to { A = AND(A, L); 4 },
+    0xa6 to { A = AND(A, RAM.getByteAt(HL)); 8 },
+    0xa7 to { A = AND(A, A); 4 },
+    0xa8 to { A = XOR(A, B); 4 },
+    0xa9 to { A = XOR(A, C); 4 },
+    0xaa to { A = XOR(A, D); 4 },
+    0xab to { A = XOR(A, E); 4 },
+    0xac to { A = XOR(A, H); 4 },
+    0xad to { A = XOR(A, L); 4 },
+    0xae to { A = XOR(A, RAM.getByteAt(HL)); 8 },
+    0xaf to { A = XOR(A, A); 4 },
+    0xb0 to { A = OR(A, B); 4 },
+    0xb1 to { A = OR(A, C); 4 },
+    0xb2 to { A = OR(A, D); 4 },
+    0xb3 to { A = OR(A, E); 4 },
+    0xb4 to { A = OR(A, H); 4 },
+    0xb5 to { A = OR(A, L); 4 },
+    0xb6 to { A = OR(A, RAM.getByteAt(HL)); 8 },
+    0xb7 to { A = OR(A, A); 4 },
+    0xb8 to { SUB(A, B); 4 },
+    0xb9 to { SUB(A, C); 4 },
+    0xba to { SUB(A, D); 4 },
+    0xbb to { SUB(A, E); 4 },
+    0xbc to { SUB(A, H); 4 },
+    0xbd to { SUB(A, L); 4 },
+    0xbe to { SUB(A, RAM.getByteAt(HL)); 8 },
+    0xbf to { SUB(A, A); 4 },
     0xc0 to {
-      if (getZero() == '0') {
+      if (!getZero()) {
         PCl = RAM.getByteAt(SP)
         PCh = RAM.getByteAt(SP + 1)
         SP = SP + 2
@@ -717,7 +717,7 @@ object CPU {
       12
     },
     0xc2 to {
-      if (getZero() == '0') {
+      if (!getZero()) {
         PC = getNextWord()
         16
       } else {
@@ -727,7 +727,7 @@ object CPU {
     },
     0xc3 to { PC = getNextWord(); 16 },
     0xc4 to {
-      if (getZero() == '0') {
+      if (!getZero()) {
         val nextPC = getNextWord()
         RAM.setByteAt(SP - 1, PCh)
         RAM.setByteAt(SP - 2, PCl)
@@ -745,7 +745,7 @@ object CPU {
       SP = SP - 2
       16
     },
-    0xc6 to { A = A ADD RAM.getByteAt(PC++); 8 },
+    0xc6 to { A = ADD(A, RAM.getByteAt(PC++)); 8 },
     0xc7 to {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
@@ -754,7 +754,7 @@ object CPU {
       16
     },
     0xc8 to {
-      if (getZero() == '1') {
+      if (getZero()) {
         PCl = RAM.getByteAt(SP)
         PCh = RAM.getByteAt(SP + 1)
         SP = SP + 2
@@ -771,7 +771,7 @@ object CPU {
       16
     },
     0xca to {
-      if (getZero() == '1') {
+      if (getZero()) {
         PC = getNextWord()
         16
       } else {
@@ -781,7 +781,7 @@ object CPU {
     },
     0xcb to { prefix = true; 4 },
     0xcc to {
-      if (getZero() == '1') {
+      if (getZero()) {
         val nextPC = getNextWord()
         RAM.setByteAt(SP - 1, PCh)
         RAM.setByteAt(SP - 2, PCl)
@@ -801,7 +801,7 @@ object CPU {
       PC = nextPC
       24
     },
-    0xce to { A = (A ADC RAM.getByteAt(PC++)); 8 },
+    0xce to { A = ADC(A, RAM.getByteAt(PC++)); 8 },
     0xcf to {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
@@ -810,7 +810,7 @@ object CPU {
       16
     },
     0xd0 to {
-      if (getCarry() == '0') {
+      if (!getCarry()) {
         PCl = RAM.getByteAt(SP)
         PCh = RAM.getByteAt(SP + 1)
         SP = SP + 2
@@ -827,7 +827,7 @@ object CPU {
       12
     },
     0xd2 to {
-      if (getCarry() == '0') {
+      if (!getCarry()) {
         PC = getNextWord()
         16
       } else {
@@ -836,7 +836,7 @@ object CPU {
       }
     },
     0xd4 to {
-      if (getCarry() == '0') {
+      if (!getCarry()) {
         val nextPC = getNextWord()
         RAM.setByteAt(SP - 1, PCh)
         RAM.setByteAt(SP - 2, PCl)
@@ -854,7 +854,7 @@ object CPU {
       SP = SP - 2
       16
     },
-    0xd6 to { A = A SUB RAM.getByteAt(PC++); 8 },
+    0xd6 to { A = SUB(A, RAM.getByteAt(PC++)); 8 },
     0xd7 to {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
@@ -863,7 +863,7 @@ object CPU {
       16
     },
     0xd8 to {
-      if (getCarry() == '1') {
+      if (getCarry()) {
         PCl = RAM.getByteAt(SP)
         PCh = RAM.getByteAt(SP + 1)
         SP = SP + 2
@@ -881,7 +881,7 @@ object CPU {
       16
     },
     0xda to {
-      if (getCarry() == '1') {
+      if (getCarry()) {
         PC = getNextWord()
         16
       } else {
@@ -890,7 +890,7 @@ object CPU {
       }
     },
     0xdc to {
-      if (getCarry() == '1') {
+      if (getCarry()) {
         val nextPC = getNextWord()
         RAM.setByteAt(SP - 1, PCh)
         RAM.setByteAt(SP - 2, PCl)
@@ -902,7 +902,7 @@ object CPU {
         12
       }
     },
-    0xde to { A = (A SBC RAM.getByteAt(PC++)); 8 },
+    0xde to { A = SBC(A, RAM.getByteAt(PC++)); 8 },
     0xdf to {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
@@ -924,7 +924,7 @@ object CPU {
       SP = SP - 2
       16
     },
-    0xe6 to { A = A AND RAM.getByteAt(PC++); 8 },
+    0xe6 to { A = AND(A, RAM.getByteAt(PC++)); 8 },
     0xe7 to {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
@@ -935,7 +935,7 @@ object CPU {
     0xe8 to { SP = SP + (RAM.getByteAt(PC++).toByte()).toInt(); 16 },
     0xe9 to { PC = HL; 4 },
     0xea to { RAM.setByteAt(getNextWord(), A); 16 },
-    0xee to { A = (A XOR RAM.getByteAt(PC++)); 8 },
+    0xee to { A = XOR(A, RAM.getByteAt(PC++)); 8 },
     0xef to {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
@@ -958,7 +958,7 @@ object CPU {
       SP = SP - 2
       16
     },
-    0xf6 to { A = A OR RAM.getByteAt(PC++); 8 },
+    0xf6 to { A = OR(A, RAM.getByteAt(PC++)); 8 },
     0xf7 to {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
@@ -970,7 +970,7 @@ object CPU {
     0xf9 to { SP = HL; 8 },
     0xfa to { A = RAM.getByteAt(getNextWord()); 16 },
     0xfb to { interrupts = true; 4 },
-    0xfe to { A SUB RAM.getByteAt(PC++); 8 },
+    0xfe to { SUB(A, RAM.getByteAt(PC++)); 8 },
     0xff to {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
@@ -1044,70 +1044,70 @@ object CPU {
     0x3d to { L = srl(L); 8 },
     0x3e to { RAM.setByteAt(HL, srl(RAM.getByteAt(HL))); 16 },
     0x3f to { A = srl(A); 8 },
-    0x40 to { setZero(BIT(B, 0)); 8 },
-    0x41 to { setZero(BIT(C, 0)); 8 },
-    0x42 to { setZero(BIT(D, 0)); 8 },
-    0x43 to { setZero(BIT(E, 0)); 8 },
-    0x44 to { setZero(BIT(H, 0)); 8 },
-    0x45 to { setZero(BIT(L, 0)); 8 },
-    0x46 to { setZero(BIT(RAM.getByteAt(HL), 0)); 12 },
-    0x47 to { setZero(BIT(A, 0)); 8 },
-    0x48 to { setZero(BIT(B, 1)); 8 },
-    0x49 to { setZero(BIT(C, 1)); 8 },
-    0x4a to { setZero(BIT(D, 1)); 8 },
-    0x4b to { setZero(BIT(E, 1)); 8 },
-    0x4c to { setZero(BIT(H, 1)); 8 },
-    0x4d to { setZero(BIT(L, 1)); 8 },
-    0x4e to { setZero(BIT(RAM.getByteAt(HL), 1)); 12 },
-    0x4f to { setZero(BIT(A, 1)); 8 },
-    0x50 to { setZero(BIT(B, 2)); 8 },
-    0x51 to { setZero(BIT(C, 2)); 8 },
-    0x52 to { setZero(BIT(D, 2)); 8 },
-    0x53 to { setZero(BIT(E, 2)); 8 },
-    0x54 to { setZero(BIT(H, 2)); 8 },
-    0x55 to { setZero(BIT(L, 2)); 8 },
-    0x56 to { setZero(BIT(RAM.getByteAt(HL), 2)); 12 },
-    0x57 to { setZero(BIT(A, 2)); 8 },
-    0x58 to { setZero(BIT(B, 3)); 8 },
-    0x59 to { setZero(BIT(C, 3)); 8 },
-    0x5a to { setZero(BIT(D, 3)); 8 },
-    0x5b to { setZero(BIT(E, 3)); 8 },
-    0x5c to { setZero(BIT(H, 3)); 8 },
-    0x5d to { setZero(BIT(L, 3)); 8 },
-    0x5e to { setZero(BIT(RAM.getByteAt(HL), 3)); 12 },
-    0x5f to { setZero(BIT(A, 3)); 8 },
-    0x60 to { setZero(BIT(B, 4)); 8 },
-    0x61 to { setZero(BIT(C, 4)); 8 },
-    0x62 to { setZero(BIT(D, 4)); 8 },
-    0x63 to { setZero(BIT(E, 4)); 8 },
-    0x64 to { setZero(BIT(H, 4)); 8 },
-    0x65 to { setZero(BIT(L, 4)); 8 },
-    0x66 to { setZero(BIT(RAM.getByteAt(HL), 4)); 12 },
-    0x67 to { setZero(BIT(A, 4)); 8 },
-    0x68 to { setZero(BIT(B, 5)); 8 },
-    0x69 to { setZero(BIT(C, 5)); 8 },
-    0x6a to { setZero(BIT(D, 5)); 8 },
-    0x6b to { setZero(BIT(E, 5)); 8 },
-    0x6c to { setZero(BIT(H, 5)); 8 },
-    0x6d to { setZero(BIT(L, 5)); 8 },
-    0x6e to { setZero(BIT(RAM.getByteAt(HL), 5)); 12 },
-    0x6f to { setZero(BIT(A, 5)); 8 },
-    0x70 to { setZero(BIT(B, 6)); 8 },
-    0x71 to { setZero(BIT(C, 6)); 8 },
-    0x72 to { setZero(BIT(D, 6)); 8 },
-    0x73 to { setZero(BIT(E, 6)); 8 },
-    0x74 to { setZero(BIT(H, 6)); 8 },
-    0x75 to { setZero(BIT(L, 6)); 8 },
-    0x76 to { setZero(BIT(RAM.getByteAt(HL), 6)); 12 },
-    0x77 to { setZero(BIT(A, 6)); 8 },
-    0x78 to { setZero(BIT(B, 7)); 8 },
-    0x79 to { setZero(BIT(C, 7)); 8 },
-    0x7a to { setZero(BIT(D, 7)); 8 },
-    0x7b to { setZero(BIT(E, 7)); 8 },
-    0x7c to { setZero(BIT(H, 7)); 8 },
-    0x7d to { setZero(BIT(L, 7)); 8 },
-    0x7e to { setZero(BIT(RAM.getByteAt(HL), 7)); 12 },
-    0x7f to { setZero(BIT(A, 7)); 8 },
+    0x40 to { setZero(BIT(B, 0) == '1'); 8 },
+    0x41 to { setZero(BIT(C, 0) == '1'); 8 },
+    0x42 to { setZero(BIT(D, 0) == '1'); 8 },
+    0x43 to { setZero(BIT(E, 0) == '1'); 8 },
+    0x44 to { setZero(BIT(H, 0) == '1'); 8 },
+    0x45 to { setZero(BIT(L, 0) == '1'); 8 },
+    0x46 to { setZero(BIT(RAM.getByteAt(HL), 0) == '1'); 12 },
+    0x47 to { setZero(BIT(A, 0) == '1'); 8 },
+    0x48 to { setZero(BIT(B, 1) == '1'); 8 },
+    0x49 to { setZero(BIT(C, 1) == '1'); 8 },
+    0x4a to { setZero(BIT(D, 1) == '1'); 8 },
+    0x4b to { setZero(BIT(E, 1) == '1'); 8 },
+    0x4c to { setZero(BIT(H, 1) == '1'); 8 },
+    0x4d to { setZero(BIT(L, 1) == '1'); 8 },
+    0x4e to { setZero(BIT(RAM.getByteAt(HL), 1) == '1'); 12 },
+    0x4f to { setZero(BIT(A, 1) == '1'); 8 },
+    0x50 to { setZero(BIT(B, 2) == '1'); 8 },
+    0x51 to { setZero(BIT(C, 2) == '1'); 8 },
+    0x52 to { setZero(BIT(D, 2) == '1'); 8 },
+    0x53 to { setZero(BIT(E, 2) == '1'); 8 },
+    0x54 to { setZero(BIT(H, 2) == '1'); 8 },
+    0x55 to { setZero(BIT(L, 2) == '1'); 8 },
+    0x56 to { setZero(BIT(RAM.getByteAt(HL), 2) == '1'); 12 },
+    0x57 to { setZero(BIT(A, 2) == '1'); 8 },
+    0x58 to { setZero(BIT(B, 3) == '1'); 8 },
+    0x59 to { setZero(BIT(C, 3) == '1'); 8 },
+    0x5a to { setZero(BIT(D, 3) == '1'); 8 },
+    0x5b to { setZero(BIT(E, 3) == '1'); 8 },
+    0x5c to { setZero(BIT(H, 3) == '1'); 8 },
+    0x5d to { setZero(BIT(L, 3) == '1'); 8 },
+    0x5e to { setZero(BIT(RAM.getByteAt(HL), 3) == '1'); 12 },
+    0x5f to { setZero(BIT(A, 3) == '1'); 8 },
+    0x60 to { setZero(BIT(B, 4) == '1'); 8 },
+    0x61 to { setZero(BIT(C, 4) == '1'); 8 },
+    0x62 to { setZero(BIT(D, 4) == '1'); 8 },
+    0x63 to { setZero(BIT(E, 4) == '1'); 8 },
+    0x64 to { setZero(BIT(H, 4) == '1'); 8 },
+    0x65 to { setZero(BIT(L, 4) == '1'); 8 },
+    0x66 to { setZero(BIT(RAM.getByteAt(HL), 4) == '1'); 12 },
+    0x67 to { setZero(BIT(A, 4) == '1'); 8 },
+    0x68 to { setZero(BIT(B, 5) == '1'); 8 },
+    0x69 to { setZero(BIT(C, 5) == '1'); 8 },
+    0x6a to { setZero(BIT(D, 5) == '1'); 8 },
+    0x6b to { setZero(BIT(E, 5) == '1'); 8 },
+    0x6c to { setZero(BIT(H, 5) == '1'); 8 },
+    0x6d to { setZero(BIT(L, 5) == '1'); 8 },
+    0x6e to { setZero(BIT(RAM.getByteAt(HL), 5) == '1'); 12 },
+    0x6f to { setZero(BIT(A, 5) == '1'); 8 },
+    0x70 to { setZero(BIT(B, 6) == '1'); 8 },
+    0x71 to { setZero(BIT(C, 6) == '1'); 8 },
+    0x72 to { setZero(BIT(D, 6) == '1'); 8 },
+    0x73 to { setZero(BIT(E, 6) == '1'); 8 },
+    0x74 to { setZero(BIT(H, 6) == '1'); 8 },
+    0x75 to { setZero(BIT(L, 6) == '1'); 8 },
+    0x76 to { setZero(BIT(RAM.getByteAt(HL), 6) == '1'); 12 },
+    0x77 to { setZero(BIT(A, 6) == '1'); 8 },
+    0x78 to { setZero(BIT(B, 7) == '1'); 8 },
+    0x79 to { setZero(BIT(C, 7) == '1'); 8 },
+    0x7a to { setZero(BIT(D, 7) == '1'); 8 },
+    0x7b to { setZero(BIT(E, 7) == '1'); 8 },
+    0x7c to { setZero(BIT(H, 7) == '1'); 8 },
+    0x7d to { setZero(BIT(L, 7) == '1'); 8 },
+    0x7e to { setZero(BIT(RAM.getByteAt(HL), 7) == '1'); 12 },
+    0x7f to { setZero(BIT(A, 7) == '1'); 8 },
     0x80 to { B = RES(B, 0); 8 },
     0x81 to { C = RES(C, 0); 8 },
     0x82 to { D = RES(D, 0); 8 },

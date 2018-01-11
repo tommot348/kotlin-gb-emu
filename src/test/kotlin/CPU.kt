@@ -2,8 +2,6 @@ package de.prt.gb.hardware
 import kotlin.test.assertEquals
 import org.junit.Test
 
-import de.prt.gb.hardware.*
-
 class TestCPU {
     @Test fun testHelpers() {
       assertEquals(
@@ -14,31 +12,42 @@ class TestCPU {
           CPU.joinHighByteLowByte(0b11111111.toShort(), 0.toShort()))
     }
     @Test fun testRegisters() {
-      CPU.A = 0b11111111.toShort()
+      CPU.A = 0b11111111
+      CPU.F = 0
       assertEquals(CPU.AF, 0b1111111100000000)
-      CPU.B = 0b10101010.toShort()
+      CPU.B = 0b10101010
       assertEquals(CPU.BC, 0b1010101000000000)
-      CPU.D = 0b01010101.toShort()
+      CPU.D = 0b01010101
       assertEquals(CPU.DE, 0b0101010100000000)
-      CPU.H = 0b01010101.toShort()
+      CPU.H = 0b01010101
       assertEquals(CPU.HL, 0b0101010100000000)
       CPU.AF = 0b0000000011111111
-      assertEquals(CPU.A, 0.toShort())
-      assertEquals(CPU.F, 0b11111111.toShort())
+      assertEquals(CPU.A, 0)
+      assertEquals(CPU.F, 0b11111111)
       CPU.BC = 0b0000000011111111
-      assertEquals(CPU.B, 0.toShort())
-      assertEquals(CPU.C, 0b11111111.toShort())
+      assertEquals(CPU.B, 0)
+      assertEquals(CPU.C, 0b11111111)
       CPU.DE = 0b0000000011111111
-      assertEquals(CPU.D, 0.toShort())
-      assertEquals(CPU.E, 0b11111111.toShort())
+      assertEquals(CPU.D, 0)
+      assertEquals(CPU.E, 0b11111111)
       CPU.HL = 0b0000000011111111
-      assertEquals(CPU.H, 0.toShort())
-      assertEquals(CPU.L, 0b11111111.toShort())
+      assertEquals(CPU.H, 0)
+      assertEquals(CPU.L, 0b11111111)
     }
     @Test fun testArithmetic() {
-      assertEquals(CPU.A.INC(), 1.toShort())
-      assertEquals(255.toShort().INC(), 0.toShort())
-      assertEquals(1.toShort().DEC(), 0.toShort())
-      assertEquals(0.toShort().DEC(), 255.toShort())
+      assertEquals(CPU.INC(0), 1)
+      assertEquals(CPU.INC(0.toShort()), 1)
+      assertEquals(CPU.INC(255.toShort()), 0)
+      assertEquals(CPU.INC(0xFFFF), 0)
+
+      assertEquals(CPU.DEC(1.toShort()), 0)
+      assertEquals(CPU.DEC(1), 0)
+      assertEquals(CPU.DEC(0.toShort()), 255)
+      assertEquals(CPU.DEC(0), 0xFFFF)
+
+      assertEquals(CPU.ADD(0.toShort(), 3.toShort()), 3.toShort())
+      assertEquals(CPU.ADD(255.toShort(), 3.toShort()), 2.toShort())
+      assertEquals(CPU.SUB(0.toShort(), 3.toShort()), 253.toShort())
+      assertEquals(CPU.SUB(3.toShort(), 3.toShort()), 0.toShort())
     }
 }
