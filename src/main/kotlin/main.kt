@@ -22,9 +22,16 @@ fun main(args: Array<String>) {
 //  RAM.setByteAt(0xFF40, 0b11111111)
 //  CPU.setIP(0x0100)
   while (true) {
+    val beforeInt = System.nanoTime()
     CPU.handleInterrupts()
+    val afterInt = System.nanoTime()
+    val beforeCPU = System.nanoTime()
     val time = CPU.tick()
-    println(CPU)
+    val afterCPU = System.nanoTime()
+    //println(CPU)
+    val beforeGPU = System.nanoTime()
     GPU.tick(time)
+    val afterGPU = System.nanoTime()
+//    println("Int: ${afterInt - beforeInt}\nCPU: ${afterCPU - beforeCPU}\nGPU: ${afterGPU - beforeGPU}")
   }
 }

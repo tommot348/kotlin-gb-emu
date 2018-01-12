@@ -170,9 +170,9 @@ object CPU {
   }
   internal fun SUB(a: Short, b: Short): Short {
     setHalfCarry(false)
-    setSubstract(false)
+    setSubstract(true)
     setCarry(false)
-    setZero(true)
+    setZero(false)
     val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
     var rthis = (a - b).toShort()
@@ -192,12 +192,12 @@ object CPU {
   internal fun SBC(a: Short, b: Short): Short {
     val c = if (getCarry()) 1 else 0
     setHalfCarry(false)
-    setSubstract(false)
+    setSubstract(true)
     setCarry(false)
-    setZero(true)
+    setZero(false)
     val thirdHL = b.toString(2).padStart(8, '0').get(3)
     val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (a - b - c).toShort()
+    var rthis = ((a - b) - c).toShort()
     val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
     if (rthis < 0) {
       rthis = (0x100 + rthis).toShort()
@@ -249,7 +249,7 @@ object CPU {
     setHalfCarry(false)
     setSubstract(false)
     val an = a.toString(2).padStart(8, '0')
-    val c = getCarry()
+    val c = if (getCarry()) '1' else '0'
     setCarry(an.first() == '1')
     val ret = (an.substring(1) + c).toShort(2)
     if (prefix) {
@@ -281,7 +281,7 @@ object CPU {
     val an = a.toString(2).padStart(8, '0')
     val c = if (getCarry()) '1' else '0'
     setCarry(an.last() == '1')
-    val ret = ( c + an.substring(1)).toShort(2)
+    val ret = ( c + an.substring(0, an.length - 1)).toShort(2)
     if (prefix) {
       if (ret.toInt() == 0) {
         setZero(true)
@@ -1252,7 +1252,7 @@ object CPU {
     if (interrupts) {
       val ints = RAM.getByteAt(0xFF0F).toInt()
       val intsEnabled = RAM.getByteAt(0xFFFF).toInt()
-      println("Interrupt ${ints.toString(2)} ${intsEnabled.toString(2)}")
+      //println("Interrupt ${ints.toString(2)} ${intsEnabled.toString(2)}")
       if ((ints and intsEnabled) > 0) {
         when {
           (ints and 0b1) == 1 -> {
@@ -1304,6 +1304,8 @@ CurrOp: ${RAM.getByteAt(PC).toString(16).padStart(2, '0')}
       } else {
         time += opcodes.get(op.toInt())!!()
       }
+    } else {
+      time++
     }
     return time
   }
