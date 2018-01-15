@@ -26,40 +26,41 @@ object GPU {
   }
   internal fun byteToPalette(input: Short): List<Int> {
     val ps = input.toString(2).padStart(8, '0')
-    return listOf(ps.substring(6).toInt(2),
-                  ps.substring(4, 6).toInt(2),
-                  ps.substring(2, 4).toInt(2),
-                  ps.substring(0, 2).toInt(2))
+    return listOf(("${ps[7]}${ps[6]}".toInt(2)),
+                  ("${ps[5]}${ps[4]}".toInt(2)),
+                  ("${ps[3]}${ps[2]}".toInt(2)),
+                  ("${ps[1]}${ps[0]}".toInt(2)))
   }
   internal fun byteToPatternData(least: Short, most: Short): List<Int> {
     val binaryLeast = least.toString(2).padStart(8, '0')
     val binaryMost = most.toString(2).padStart(8, '0')
-    val dat = (7 downTo 0).map({ "${binaryLeast[it]}${binaryMost[it]}".toInt(2) })
+    val mostLeast = binaryMost + binaryLeast
+//    val mostLeast = binaryLeast + binaryMost
+    //val dat = (0..15 step 2).map({ "${mostLeast[it]}${mostLeast[it+1]}".toInt(2) })
+    //val dat = (0..15 step 2).map({ "${mostLeast[it]}${mostLeast[it+1]}".toInt(2) })
+    //val dat = (7 downTo 0).map({ "${binaryLeast[it]}${binaryMost[it]}".toInt(2) })
+    val dat = (0..7).map({ "${binaryMost[it]}${binaryLeast[it]}".toInt(2) })
 //    dat.forEach({ println(it.toString(2).padStart(8, '0')) })
   //  println("")
     return dat
   }
   internal fun getBGData(
-      BGTileMap: List<Short>,
-      BGandWindowTileData: List<Short>,
-      BGandWindowMode: Char
-  ): List<Int> {
-    return BGTileMap.flatMap({ tileNr ->
-      if (BGandWindowMode == '1') {
-        (0..15 step 2).flatMap({ i ->
-          byteToPatternData(
-              BGandWindowTileData[tileNr + i],
-              BGandWindowTileData[tileNr + i + 1])
+      tileMap: List<List<Short>>,
+      tileData: List<List<List<Int>>>,
+      mode: Char
+  ): List<List<Int>> =
+    tileMap.flatMap({ line ->
+      val tileLine = line.map({
+        tileData[it.toInt()]
+      })
+      (0..7).map({ nr ->
+        tileLine.fold(ArrayList<Int>(), { prev, curr: List<List<Int>> ->
+          prev.addAll(curr[nr])
+          prev
         })
-      } else {
-        (0..15 step 2).flatMap({ i ->
-          byteToPatternData(
-              BGandWindowTileData[tileNr + i + 128],
-              BGandWindowTileData[tileNr + i + 129])
-        })
-      }
+      })
     })
-  }
+
   private fun getSpriteList(
       tileData: List<Short>,
       obp0: List<Int>,
@@ -115,10 +116,18 @@ object GPU {
         }
       })
     })
-  
 
-  internal var bg: List<Int> = listOf(0)
-  internal var window: List<Int> = listOf(0)
+  internal fun getTiles(addr: Int): List<List<List<Int>>> =
+    (0..255).map({ tileNr ->
+      (0..15 step 2).map({ part ->
+        byteToPatternData(
+            RAM.getByteAt(addr + (tileNr * 16) + part),
+            RAM.getByteAt(addr + (tileNr * 16) + part + 1))
+      })
+    })
+
+  internal var bg: List<List<Int>> = ArrayList<List<Int>>()
+  internal var window: List<List<Int>> = ArrayList<List<Int>>()
   private var sprites: List<Sprite>? = null
 
   internal fun getLine(y: Short, lcdc: Short): List<Int> {
@@ -131,26 +140,27 @@ object GPU {
     val showBG = getBit(lcdc, 0) == '1'
     val showSprites = (getBit(lcdc, 1) == '1')
     // step get line from background
-    val realY = (y + scy) % 144
-    val tempLine = bg.slice((realY * 160)..(realY * 160 + 159))
+    val realY = (y + scy) % 255
+    val tempLine = bg[realY]
     val line = tempLine.mapIndexed({ i, _ ->
-      val realX = (i + scx) % 160
+      val realX = (i + scx) % 255
       tempLine[realX]
-    })
+    }).slice(0..159)
     // possibly overwrite with window
-    return line.map({ bgp[it] })
-/*    val withWindow = line.mapIndexed({ i, curr ->
-      if (showWindow) {
-        if (wy <= y) {
-          if (wx <= i) {
-            window[(y - wy) * 160 + (i - wx)]
+    val withWindow = if (showWindow && y >= wy) {
+      line.mapIndexed({ x, column ->
+        if (x >= wx) {
+            window[y.toInt()][x]
+          } else {
+            column
           }
-        }
+        })
+      } else {
+        line
       }
-      curr
-    })
     // possibly overwrite with sprite
-    return withWindow.mapIndexed({ i, curr ->
+    return withWindow.map({ bgp[it] })
+    /*return withWindow.mapIndexed({ i, curr ->
       val spriteSize = if (getBit(lcdc, 2) == '0') 8 else 16
       val spritesOnLine = sprites?.filter({ it.y >= y && it.y < y + spriteSize })
       if (showSprites) {
@@ -229,35 +239,19 @@ object GPU {
           1 -> {
             val BGandWindowMode = getBit(lcdc, 4)
             val WindowTileMap = if (getBit(lcdc, 6) == '0') {
-              if (BGandWindowMode == '0') {
-                (0x9800..0x9BFF).map({ RAM.getByteAt(it).toByte().toShort() })
-              } else {
-                (0x9800..0x9BFF).map({ RAM.getByteAt(it) })
-              }
+              getTileNrs(0x9800, BGandWindowMode == '0')
             } else {
-              if (BGandWindowMode == '0') {
-                (0x9C00..0x9FFF).map({ RAM.getByteAt(it).toByte().toShort() })
-              } else {
-                (0x9C00..0x9FFF).map({ RAM.getByteAt(it) })
-              }
+              getTileNrs(0x9C00, BGandWindowMode == '0')
             }
             val BGandWindowTileData = if (BGandWindowMode == '0') {
-              (0x8800..0x97FF).map({ RAM.getByteAt(it) })
+              getTiles(0x8800)
             } else {
-              (0x8000..0x8FFF).map({ RAM.getByteAt(it) })
+              getTiles(0x8000)
             }
             val BGTileMap = if (getBit(lcdc, 3) == '0') {
-              if (BGandWindowMode == '0') {
-                (0x9800..0x9BFF).map({ RAM.getByteAt(it).toByte().toShort() })
-              } else {
-                (0x9800..0x9BFF).map({ RAM.getByteAt(it) })
-              }
+              getTileNrs(0x9800, BGandWindowMode == '0')
             } else {
-              if (BGandWindowMode == '0') {
-                (0x9C00..0x9FFF).map({ RAM.getByteAt(it).toByte().toShort() })
-              } else {
-                (0x9C00..0x9FFF).map({ RAM.getByteAt(it) })
-              }
+              getTileNrs(0x9C00, BGandWindowMode == '0')
             }
             val spriteTileData = (0x8000..0x8FFF).map({ RAM.getByteAt(it) })
             val spriteSize = getBit(lcdc, 2)

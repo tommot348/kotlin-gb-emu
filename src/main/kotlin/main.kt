@@ -31,6 +31,7 @@ fun main(args: Array<String>) {
     //println(CPU)
     val beforeGPU = System.nanoTime()
     GPU.tick(time)
+//    if (beforeGPU % 100 == 0L) Thread.sleep(1)
     val afterGPU = System.nanoTime()
 //    println("Int: ${afterInt - beforeInt}\nCPU: ${afterCPU - beforeCPU}\nGPU: ${afterGPU - beforeGPU}")
   }
