@@ -38,9 +38,11 @@ internal class Display : JFrame("Test") {
     add(fb)
   }
   fun update(lines: ArrayList<List<Int>>) {
-    fb.dat.removeAll({ true })
-    fb.dat.addAll(lines)
-    repaint()
+    if (! (fb.dat == lines)) {
+      fb.dat.removeAll({ true })
+      fb.dat.addAll(lines)
+      repaint()
+    }
   }
   fun showWindow() {
     SwingUtilities.invokeLater(Runnable() {

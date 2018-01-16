@@ -363,12 +363,12 @@ object CPU {
   }
   internal fun SET(a: Short, c: Int): Short {
     val an = a.toString(2).padStart(8, '0')
-    val ret = an.substring(0, 7 - c) + '1' + an.substring(c)
+    val ret = an.substring(0, 7 - c) + '1' + an.substring(7 - c + 1)
     return ret.toShort(2)
   }
   internal fun RES(a: Short, c: Int): Short {
     val an = a.toString(2).padStart(8, '0')
-    val ret = an.substring(0, 7 - c) + '1' + an.substring(c)
+    val ret = an.substring(0, 7 - c) + '0' + an.substring(7 - c + 1)
     return ret.toShort(2)
   }
 

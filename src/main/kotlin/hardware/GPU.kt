@@ -34,14 +34,7 @@ object GPU {
   internal fun byteToPatternData(least: Short, most: Short): List<Int> {
     val binaryLeast = least.toString(2).padStart(8, '0')
     val binaryMost = most.toString(2).padStart(8, '0')
-    val mostLeast = binaryMost + binaryLeast
-//    val mostLeast = binaryLeast + binaryMost
-    //val dat = (0..15 step 2).map({ "${mostLeast[it]}${mostLeast[it+1]}".toInt(2) })
-    //val dat = (0..15 step 2).map({ "${mostLeast[it]}${mostLeast[it+1]}".toInt(2) })
-    //val dat = (7 downTo 0).map({ "${binaryLeast[it]}${binaryMost[it]}".toInt(2) })
     val dat = (0..7).map({ "${binaryMost[it]}${binaryLeast[it]}".toInt(2) })
-//    dat.forEach({ println(it.toString(2).padStart(8, '0')) })
-  //  println("")
     return dat
   }
   internal fun getBGData(
@@ -141,7 +134,7 @@ object GPU {
     val showSprites = (getBit(lcdc, 1) == '1')
     // step get line from background
     val realY = (y + scy) % 255
-    val tempLine = bg[realY]
+    val tempLine = if (showBG) bg[realY] else (0..255).map({ 0 })
     val line = tempLine.mapIndexed({ i, _ ->
       val realX = (i + scx) % 255
       tempLine[realX]
@@ -179,15 +172,10 @@ object GPU {
           }
         }
       }
-      if (showBG) {
-        bgp[curr]
-      } else {
-        0
-      }
     })*/
   }
   val lines = ArrayList<List<Int>>()
-  fun tick(clock: Int): List<Int> {
+  fun tick(clock: Int) {
     val lcdc = RAM.getByteAt(0xFF40)
     val stat = RAM.getByteAt(0xFF41)
     var statStr = stat.toString(2).padStart(8, '0')
@@ -220,21 +208,28 @@ object GPU {
             lines.add(getLine(ly, lcdc))
             state = 2
           } else {
-            RAM.setByteAt(0xFF44, 0.toShort(), true)
-            RAM.setByteAt(
-                0xFF0F,
-                (interruptFlags.toInt() or 0b00000001).toShort(),
-                true)
-            if (getBit(stat, 4) == '1') {
+            RAM.setByteAt(0xFF44, (ly + 1).toShort(), true)
+            if (ly.toInt() == 144) {
               RAM.setByteAt(
                   0xFF0F,
-                  (interruptFlags.toInt() or 0b11).toShort(),
+                  (interruptFlags.toInt() or 0b00000001).toShort(),
                   true)
+              if (getBit(stat, 4) == '1') {
+                RAM.setByteAt(
+                    0xFF0F,
+                    (interruptFlags.toInt() or 0b11).toShort(),
+                    true)
+              }
             }
-            //clear
-            display.update(lines)
-            lines.removeAll({ true })
-            state = 1
+            if (ly > 153) {
+              RAM.setByteAt(0xFF44, 0.toShort(), true)
+              //clear
+              display.update(lines)
+              lines.removeAll({ true })
+              state = 1
+            } else {
+              state = 2
+            }
           }
           1 -> {
             val BGandWindowMode = getBit(lcdc, 4)
@@ -285,6 +280,5 @@ object GPU {
     }
     lastClock = clock
     RAM.setByteAt(0xFF41, (statStr).toShort(2), true)
-    return listOf(0)
   }
 }

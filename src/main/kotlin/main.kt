@@ -1,8 +1,10 @@
 package main
 
 import de.prt.gb.hardware.CPU
-import de.prt.gb.hardware.RAM
 import de.prt.gb.hardware.GPU
+import de.prt.gb.hardware.BIOS
+import de.prt.gb.hardware.CARTRIDGE
+import de.prt.gb.hardware.TIMER
 
 fun java.io.File.toShortList(): List<Short> =
   this.readBytes().map({
@@ -17,22 +19,16 @@ fun java.io.File.toShortList(): List<Short> =
 fun main(args: Array<String>) {
   val bios = java.io.File(CPU::class.java.getResource("dmg_boot.bin").toURI())
   val rom = java.io.File(CPU::class.java.getResource("Tetris.gb").toURI())
-  RAM.load(0, rom.toShortList())
-  RAM.load(0, bios.toShortList())
+  BIOS.load(bios.toShortList())
+  CARTRIDGE.load(rom.toShortList())
+  println(rom.toShortList().get(0x234))
 //  RAM.setByteAt(0xFF40, 0b11111111)
 //  CPU.setIP(0x0100)
   while (true) {
-    val beforeInt = System.nanoTime()
     CPU.handleInterrupts()
-    val afterInt = System.nanoTime()
-    val beforeCPU = System.nanoTime()
     val time = CPU.tick()
-    val afterCPU = System.nanoTime()
-    //println(CPU)
-    val beforeGPU = System.nanoTime()
+    TIMER.tick(time)
+//    println(CPU)
     GPU.tick(time)
-//    if (beforeGPU % 100 == 0L) Thread.sleep(1)
-    val afterGPU = System.nanoTime()
-//    println("Int: ${afterInt - beforeInt}\nCPU: ${afterCPU - beforeCPU}\nGPU: ${afterGPU - beforeGPU}")
   }
 }
