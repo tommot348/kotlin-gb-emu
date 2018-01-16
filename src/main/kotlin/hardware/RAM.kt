@@ -55,8 +55,8 @@ internal object CARTRIDGE {
     RAM.load(0x4000, romBanks[1])
   }
   fun switchRomBank(nr: Int) {
-    currentRomBank = nr
-    RAM.load(0x4000, romBanks[nr.toInt()])
+    currentRomBank = if (nr > romBanks.size) romBanks.size - 1 else nr
+    RAM.load(0x4000, romBanks[currentRomBank])
   }
   fun switchRamBank(nr: Int) {
     currentRamBank = nr
@@ -105,6 +105,11 @@ internal object RAM {
     return when (addr) {
       in 0..0xFF -> if (biosMapped) BIOS.getByteAt(addr) else ram[addr]
       in 0xE000..0xFDFF -> ram[addr - 0x2000]
+      0xFF00 -> {
+        val mode = (0b00110000 and ram[0xFF00].toInt()) shr 4
+        val state = Input.getState(mode)
+        state
+      }
       else -> ram[addr]
     }
   }

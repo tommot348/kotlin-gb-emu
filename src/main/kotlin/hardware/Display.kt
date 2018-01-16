@@ -36,9 +36,10 @@ internal class Display : JFrame("Test") {
   init {
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     add(fb)
+    addKeyListener(Input)
   }
   fun update(lines: ArrayList<List<Int>>) {
-    if (! (fb.dat == lines)) {
+    if ((! (fb.dat == lines)) && (lines.size != 0)) {
       fb.dat.removeAll({ true })
       fb.dat.addAll(lines)
       repaint()

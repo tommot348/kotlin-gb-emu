@@ -35,7 +35,7 @@ object TIMER {
         val interruptFlags = RAM.getByteAt(0xFF0F)
         RAM.setByteAt(
               0xFF0F,
-              (interruptFlags.toInt() or 0b1000000).toShort(),
+              (interruptFlags.toInt() or 0b00100000).toShort(),
               true)
       } else {
         RAM.setByteAt(0xFF04, (timer + 1).toShort(), true)

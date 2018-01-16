@@ -495,9 +495,10 @@ object CPU {
       }
       4
     },
-    0x28 to { // JP Z, a8
+    0x28 to { // JR Z,n 
       if (getZero()) {
-        PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1
+        val offset = RAM.getByteAt(PC).toByte().toInt()
+        PC = PC + offset + 1
         16
       } else {
         PC++
@@ -1286,7 +1287,8 @@ PC: ${PC.toString(16)}
 SP: ${SP.toString(16)}
 A: ${A.toString(16)} B: ${B.toString(16)} C: ${C.toString(16)} D: ${D.toString(16)}
 E: ${E.toString(16)} H: ${H.toString(16)} L: ${L.toString(16)}
-F: ${F.toString(2).padStart(8, '0')}
+F:          ${F.toString(2).padStart(8, '0')}
+IntEnabled: ${RAM.getByteAt(0xFF0F).toInt().toString(2).padStart(8, '0')}
 HL: ${HL.toString(16).padStart(4, '0')} = $HL
 BC: ${BC.toString(16)}
 Running: $running
