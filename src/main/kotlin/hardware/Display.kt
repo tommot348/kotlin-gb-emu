@@ -38,7 +38,7 @@ internal class Display : JFrame("Test") {
     add(fb)
     addKeyListener(Input)
   }
-  fun update(lines: ArrayList<List<Int>>) {
+  @Synchronized fun update(lines: ArrayList<List<Int>>) {
     if ((! (fb.dat == lines)) && (lines.size != 0)) {
       fb.dat.removeAll({ true })
       fb.dat.addAll(lines)

@@ -18,10 +18,6 @@ object CPU {
   internal var prefix = false
   internal var time = 0
 
-  fun setIP(p: Int) {
-    PC = p
-  }
-
   fun splitHighByteLowByte(x: Int): Pair<Short, Short> {
     val b = x and 0b0000000011111111
     val a = x / 256
@@ -518,8 +514,11 @@ object CPU {
     0x2f to {
       setHalfCarry(true)
       setSubstract(true)
-      val a = 0xFFFFFF + A.toInt()
-      A = a.inv().toShort()
+      val a = A.toInt()
+        .toString(2).padStart(8, '0')
+        .map({ if (it == '0') '1' else '0' }).joinToString("")
+        .toInt(2).toShort()
+      A = a
       4
     },
     0x30 to {
@@ -811,7 +810,7 @@ object CPU {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
       SP = SP - 2
-      PC = joinHighByteLowByte(0.toShort(), 0x8.toShort())
+      PC = 0x0008
       16
     },
     0xd0 to {
@@ -864,7 +863,7 @@ object CPU {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
       SP = SP - 2
-      PC = joinHighByteLowByte(0.toShort(), 0x10.toShort())
+      PC = 0x10
       16
     },
     0xd8 to {
@@ -912,7 +911,7 @@ object CPU {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
       SP = SP - 2
-      PC = joinHighByteLowByte(0.toShort(), 0x18.toShort())
+      PC = 0x18
       16
     },
     0xe0 to { RAM.setByteAt(0x0000FF00 + RAM.getByteAt(PC++).toInt(), A); 12 },
@@ -934,7 +933,7 @@ object CPU {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
       SP = SP - 2
-      PC = joinHighByteLowByte(0.toShort(), 0x20.toShort())
+      PC = 0x20
       16
     },
     0xe8 to { SP = SP + (RAM.getByteAt(PC++).toByte()).toInt(); 16 },
@@ -945,7 +944,7 @@ object CPU {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
       SP = SP - 2
-      PC = joinHighByteLowByte(0.toShort(), 0x28.toShort())
+      PC = 0x28
       16
     },
     0xf0 to { A = RAM.getByteAt(0x0000FF00 + RAM.getByteAt(PC++).toInt()); 12 },
@@ -968,7 +967,7 @@ object CPU {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
       SP = SP - 2
-      PC = joinHighByteLowByte(0.toShort(), 0x30.toShort())
+      PC = 0x30
       16
     },
     0xf8 to { HL = SP + (RAM.getByteAt(PC++).toByte()).toInt(); 12 },
@@ -980,7 +979,7 @@ object CPU {
       RAM.setByteAt(SP - 1, PCh)
       RAM.setByteAt(SP - 2, PCl)
       SP = SP - 2
-      PC = joinHighByteLowByte(0.toShort(), 0x38.toShort())
+      PC = 0x0038
       16
     }
   )
@@ -1299,6 +1298,10 @@ CurrOp: ${RAM.getByteAt(PC).toString(16).padStart(2, '0')}
 
   fun tick(): Int {
     if (running) {
+      /*if (PC > 0x29b1 && SP < 0xCFFF) {
+        println(CPU)
+        readLine()
+      }*/
       val op = RAM.getByteAt(PC++)
       if (prefix) {
         time += prefixOpcodes.get(op.toInt())!!()

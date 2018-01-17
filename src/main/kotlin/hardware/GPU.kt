@@ -44,7 +44,11 @@ object GPU {
   ): List<List<Int>> =
     tileMap.flatMap({ line ->
       val tileLine = line.map({
-        tileData[it.toInt()]
+        if (mode == '0') {
+          tileData[it.toInt() + 128]
+        } else {
+          tileData[it.toInt()]
+        }
       })
       (0..7).map({ nr ->
         tileLine.fold(ArrayList<Int>(), { prev, curr: List<List<Int>> ->

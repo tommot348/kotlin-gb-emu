@@ -2,10 +2,11 @@ package main
 
 import de.prt.gb.hardware.CPU
 import de.prt.gb.hardware.GPU
-import de.prt.gb.hardware.RAM
 import de.prt.gb.hardware.BIOS
 import de.prt.gb.hardware.CARTRIDGE
 import de.prt.gb.hardware.TIMER
+
+import kotlin.system.exitProcess
 
 fun java.io.File.toShortList(): List<Short> =
   this.readBytes().map({
@@ -20,16 +21,18 @@ fun java.io.File.toShortList(): List<Short> =
 fun main(args: Array<String>) {
   val bios = java.io.File(CPU::class.java.getResource("dmg_boot.bin").toURI())
   val rom = java.io.File(CPU::class.java.getResource("Tetris.gb").toURI())
-  println(rom.toShortList()[0x02f1])
   BIOS.load(bios.toShortList())
   CARTRIDGE.load(rom.toShortList())
   while (true) {
-    CPU.handleInterrupts()
-    val time = CPU.tick()
-    if (!RAM.biosMapped) {
-      //println(CPU)
+    try {
+      CPU.handleInterrupts()
+      val time = CPU.tick()
+      TIMER.tick(time)
+      GPU.tick(time)
+    } catch (e: Exception) {
+      e.printStackTrace()
+      println(CPU)
+      exitProcess(-1)
     }
-    TIMER.tick(time)
-    GPU.tick(time)
   }
 }
