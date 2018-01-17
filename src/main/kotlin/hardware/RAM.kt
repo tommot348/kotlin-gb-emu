@@ -71,11 +71,12 @@ internal object RAM {
           CARTRIDGE.setByteAt(addr, value)
         }
         0xFF04 -> ram[0xFF04] = 0
+        0xFF07 -> TIMER.selectSpeed(value.toInt())
         0xFF44 -> ram[0xFF44] = 0
         0xFF46 -> ((value * 0x100)..((value * 0x100) + 0x9F)).forEachIndexed({ i, curr ->
           ram[0xFE00 + i] = ram[curr]
         })
-        0xFF50 -> biosMapped = false
+        0xFF50 -> if (biosMapped) biosMapped = false else ram[addr] = value
         else -> ram[addr] = value
       }
     }

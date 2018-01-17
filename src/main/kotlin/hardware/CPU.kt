@@ -17,6 +17,8 @@ object CPU {
   internal var interrupts = true
   internal var prefix = false
   internal var time = 0
+  internal var print = false
+  internal var op = 0
 
   fun splitHighByteLowByte(x: Int): Pair<Short, Short> {
     val b = x and 0b0000000011111111
@@ -473,11 +475,11 @@ object CPU {
     0x26 to { H = RAM.getByteAt(PC++); 8 },
     0x27 to { //daa
       setCarry(false)
-      val a = A.toString(2).substring(4).toInt(2)
+      val a = A.toString(2).padStart(8, '0').substring(4).toInt(2)
       if (a > 9 || getHalfCarry()) {
         A = (A + 0x06.toShort()).toShort()
       }
-      val b = A.toString(2).substring(0, 4).toInt(2)
+      val b = A.toString(2).padStart(8, '0').substring(0, 4).toInt(2)
       if (b > 9 || getCarry()) {
         A = (A + 0x60.toShort()).toShort()
         setCarry(true)
@@ -486,19 +488,17 @@ object CPU {
       if ( A == 0.toShort()) {
         setZero(true)
       }
-      if (A > 0xFF.toShort()) {
-        A = (A - 0xFF.toShort()).toShort()
-      }
+      A = (A.toInt() and 0xFF).toShort()
       4
     },
     0x28 to { // JR Z,n 
       if (getZero()) {
         val offset = RAM.getByteAt(PC).toByte().toInt()
         PC = PC + offset + 1
-        16
+        12
       } else {
         PC++
-        12
+        8
       }
     },
     0x29 to { HL = ADD(HL, HL); 8 },
@@ -548,7 +548,7 @@ object CPU {
     },
     0x38 to {
       if (getCarry()) {
-        PC = PC + RAM.getByteAt(PC) + 1
+        PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1
         12
       } else {
         PC++
@@ -1280,34 +1280,33 @@ object CPU {
     }
   }
 
-  override fun toString() = """
+  @Synchronized override fun toString() = """
 CPU state
 PC: ${PC.toString(16)}
 SP: ${SP.toString(16)}
 A: ${A.toString(16)} B: ${B.toString(16)} C: ${C.toString(16)} D: ${D.toString(16)}
 E: ${E.toString(16)} H: ${H.toString(16)} L: ${L.toString(16)}
 F:          ${F.toString(2).padStart(8, '0')}
-IntEnabled: ${RAM.getByteAt(0xFF0F).toInt().toString(2).padStart(8, '0')}
 HL: ${HL.toString(16).padStart(4, '0')} = $HL
 BC: ${BC.toString(16)}
 Running: $running
 Int: $interrupts
 Prefix: $prefix
-CurrOp: ${RAM.getByteAt(PC).toString(16).padStart(2, '0')}
+CurrentOP: ${op.toString(16)}
 """
 
   fun tick(): Int {
     if (running) {
-      /*if (PC > 0x29b1 && SP < 0xCFFF) {
+      CPU.op = RAM.getByteAt(PC++).toInt()
+      if (print) {
         println(CPU)
         readLine()
-      }*/
-      val op = RAM.getByteAt(PC++)
+      }
       if (prefix) {
-        time += prefixOpcodes.get(op.toInt())!!()
+        time += prefixOpcodes.get(op)!!()
         prefix = false
       } else {
-        time += opcodes.get(op.toInt())!!()
+        time += opcodes.get(op)!!()
       }
     } else {
       time++

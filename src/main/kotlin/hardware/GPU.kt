@@ -123,7 +123,7 @@ object GPU {
       })
     })
 
-  internal var bg: List<List<Int>> = ArrayList<List<Int>>()
+  internal var bg: ArrayList<List<Int>> = ArrayList<List<Int>>()
   internal var window: List<List<Int>> = ArrayList<List<Int>>()
   private var sprites: List<Sprite>? = null
 
@@ -256,7 +256,8 @@ object GPU {
             val spriteSize = getBit(lcdc, 2)
             val obp0 = byteToPalette(RAM.getByteAt(0xFF48))
             val obp1 = byteToPalette(RAM.getByteAt(0xFF49))
-            bg = getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode)
+            bg.removeAll({ true })
+            bg.addAll(getBGData(BGTileMap, BGandWindowTileData, BGandWindowMode))
             window = getBGData(WindowTileMap, BGandWindowTileData, BGandWindowMode)
             sprites = getSpriteList(spriteTileData, obp0, obp1, spriteSize)
             if (getBit(stat, 5) == '1') {

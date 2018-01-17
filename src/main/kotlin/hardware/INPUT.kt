@@ -21,11 +21,13 @@ object Input : KeyListener {
       KeyEvent.VK_A -> a = true
       KeyEvent.VK_Y -> b = true
     }
-    val interruptFlags = RAM.getByteAt(0xFF0F)
-    RAM.setByteAt(
-          0xFF0F,
-          (interruptFlags.toInt() or 0b00001000).toShort(),
-          true)
+    if (true in listOf(a, b, select, start, up, down, left, right)) {
+      val interruptFlags = RAM.getByteAt(0xFF0F)
+      RAM.setByteAt(
+            0xFF0F,
+            (interruptFlags.toInt() or 0b00010000).toShort(),
+            true)
+    }
   }
   override fun keyReleased(e: KeyEvent) {
     when (e.getKeyCode()) {
@@ -37,6 +39,8 @@ object Input : KeyListener {
       KeyEvent.VK_SPACE -> select = false
       KeyEvent.VK_A -> a = false
       KeyEvent.VK_Y -> b = false
+      KeyEvent.VK_P -> println(CPU)
+      KeyEvent.VK_S -> CPU.running = !CPU.running
     }
   }
   override fun keyTyped(e: KeyEvent) {}
