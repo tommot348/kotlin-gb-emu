@@ -226,60 +226,71 @@ object CPU {
     setZero(false)
     setHalfCarry(false)
     setSubstract(false)
-    val an = a.toString(2).padStart(8, '0')
-    val c = if (getCarry()) '1' else '0'
-    setCarry(an.first() == '1')
-    val ret = (an.substring(1) + c).toShort(2)
+    var newA = (a.toInt() shl 1)
+    val c = if (getCarry()) 1 else 0
+    newA = newA + c
+    if (newA > 0xFF) {
+      setCarry(true)
+      newA = newA and 0xFF
+    }
     if (prefix) {
-      if (ret.toInt() == 0) {
+      if (newA == 0) {
         setZero(true)
       }
     }
-    return ret
+    return newA.toShort()
   }
   internal fun rlc(a: Short): Short {
     setZero(false)
     setHalfCarry(false)
     setSubstract(false)
-    val an = a.toString(2).padStart(8, '0')
-    setCarry(an.first() == '1')
-    val ret = (an.substring(1) + an.first()).toShort(2)
+    var newA = (a.toInt() shl 1)
+    println(newA.toString(2))
+    if (newA > 0xFF) {
+      setCarry(true)
+      newA++
+    }
+    newA = newA and 0xFF
     if (prefix) {
-      if (ret.toInt() == 0) {
+      if (newA == 0) {
         setZero(true)
       }
     }
-    return ret
+    return newA.toShort()
   }
 
   internal fun rr(a: Short): Short {
     setZero(false)
     setHalfCarry(false)
     setSubstract(false)
-    val an = a.toString(2).padStart(8, '0')
-    val c = if (getCarry()) '1' else '0'
-    setCarry(an.last() == '1')
-    val ret = ( c + an.substring(0, an.length - 1)).toShort(2)
+    val carry = ((a % 2) == 1)
+    var newA = (a.toInt() shr 1)
+    val c = if (getCarry()) 0b10000000 else 0
+    setCarry(carry)
+    newA = newA + c
     if (prefix) {
-      if (ret.toInt() == 0) {
+      if (newA == 0) {
         setZero(true)
       }
     }
-    return ret
+    return newA.toShort()
   }
   internal fun rrc(a: Short): Short {
     setZero(false)
     setHalfCarry(false)
     setSubstract(false)
-    val an = a.toString(2).padStart(8, '0')
-    setCarry(an.last() == '1')
-    val ret = (an.last() + an.substring(0, an.length - 1)).toShort(2)
+    val carry = ((a % 2) == 1)
+    var newA = (a.toInt() shr 1)
+    if (carry) {
+      newA = newA + 0b10000000
+    }
+    setCarry(carry)
     if (prefix) {
-      if (ret.toInt() == 0) {
+      if (newA == 0) {
         setZero(true)
       }
     }
-    return ret
+    return newA.toShort()
   }
 
   internal fun sla(a: Short): Short {
@@ -468,12 +479,22 @@ object CPU {
     0x27 to { //daa
       var a = A.toInt() and 0b1111
       if (a > 9) {
-        A = ADD(A, 6)
+        A = (A + 6).toShort()
       }
       var b = (A.toInt() and 0b11110000) shr 4
       if (b > 9) {
-        A = ADD(A, 0x60)
+        A = (A + 0x60).toShort()
       }
+      if (A > 0xFF) {
+        setCarry(true)
+        A = (A.toInt() and 0xFF).toShort()
+      }
+      if (A == 0.toShort()) {
+        setZero(true)
+      } else {
+        setZero(false)
+      }
+      setHalfCarry(false)
       4
     },
     0x28 to { // JR Z,n 

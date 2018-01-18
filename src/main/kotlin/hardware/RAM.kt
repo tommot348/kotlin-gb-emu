@@ -90,7 +90,7 @@ internal object RAM {
           ram[0xFE00 + i] = ram[curr]
         })
         0xFF50 -> if (biosMapped) biosMapped = false else ram[addr] = value
-        in 0xFFA0..0xFFEF -> return
+//        in 0xFFA0..0xFFEF -> return
         else -> ram[addr] = value
       }
     }
