@@ -19,8 +19,11 @@ fun java.io.File.toShortList(): List<Short> =
     .toShort(16)
   })
 fun main(args: Array<String>) {
+  if (args.size == 0) {
+    exitProcess(-1)
+  }
   val bios = java.io.File(CPU::class.java.getResource("dmg_boot.bin").toURI())
-  val rom = java.io.File(CPU::class.java.getResource("Tetris.gb").toURI())
+  val rom = java.io.File(args[0])
   BIOS.load(bios.toShortList())
   CARTRIDGE.load(rom.toShortList())
   while (true) {
@@ -29,6 +32,9 @@ fun main(args: Array<String>) {
       val time = CPU.tick()
       TIMER.tick(time)
       GPU.tick(time)
+      /*if (System.nanoTime() % 110 == 0L) {
+        Thread.sleep(1)
+      }*/
     } catch (e: Exception) {
       e.printStackTrace()
       println(CPU)

@@ -23,7 +23,7 @@ class TestCPU {
       assertEquals(0b0101010100000000, CPU.HL)
       CPU.AF = 0b0000000011111111
       assertEquals(0, CPU.A)
-      assertEquals(0b11111111, CPU.F)
+      assertEquals(0b11110000, CPU.F)
       CPU.BC = 0b0000000011111111
       assertEquals(0, CPU.B)
       assertEquals(0b11111111, CPU.C)
@@ -47,11 +47,14 @@ class TestCPU {
 
       assertEquals(3.toShort(), CPU.ADD(0.toShort(), 3.toShort()))
       assertEquals(2.toShort(), CPU.ADD(255.toShort(), 3.toShort()))
+      assertEquals(254.toShort(), CPU.ADD(255.toShort(), 255.toShort()))
       assertEquals(253.toShort(), CPU.SUB(0.toShort(), 3.toShort()))
       assertEquals(0.toShort(), CPU.SUB(3.toShort(), 3.toShort()))
 
       CPU.setCarry(true)
       assertEquals(2, CPU.ADC(0, 1))
+      CPU.setCarry(true)
+      assertEquals(255.toShort(), CPU.ADC(255.toShort(), 255.toShort()))
       CPU.setCarry(true)
       assertEquals(1, CPU.ADC(255, 1))
       CPU.setCarry(true)

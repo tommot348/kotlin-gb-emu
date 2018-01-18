@@ -1,5 +1,5 @@
 package de.prt.gb.hardware
-import kotlin.system.exitProcess
+// import kotlin.system.exitProcess
 
 object CPU {
   internal var A: Short = 0
@@ -7,7 +7,12 @@ object CPU {
   internal var C: Short = 0
   internal var D: Short = 0
   internal var E: Short = 0
-  internal var F: Short = 0
+  private var _F: Short = 0
+  internal var F: Short
+    get() = _F
+    set(f: Short) {
+      _F = (f.toInt() and 0b11110000).toShort()
+    }
   internal var H: Short = 0
   internal var L: Short = 0
   internal var PCh: Short = 0
@@ -22,7 +27,7 @@ object CPU {
 
   fun splitHighByteLowByte(x: Int): Pair<Short, Short> {
     val b = x and 0b0000000011111111
-    val a = x / 256
+    val a = (x and 0b1111111100000000) shr 8
     return Pair(a.toShort(), b.toShort())
   }
   internal fun joinHighByteLowByte(a: Short, b: Short): Int {
@@ -93,34 +98,25 @@ object CPU {
   }
   internal fun INC(a: Int): Int {
     var rthis = a + 1
-    if (rthis > 0xFFFF) {
-      rthis = 0
-    }
-    return rthis
+    return rthis and 0xFFFF
   }
   internal fun DEC(a: Int): Int {
     var rthis = a - 1
-    if (rthis < 0) {
-      rthis = 0xFFFF
-    }
-    return rthis
+    return rthis and 0xFFFF
   }
 
   internal fun ADD(a: Int, b: Int): Int {
       setHalfCarry(false)
       setSubstract(false)
       setCarry(false)
-      val eighthHL = b.toString(2).padStart(16, '0').get(8)
-      val eighthBC = a.toString(2).padStart(16, '0').get(8)
-      var rthis = b + a
-      val eighthAfter = rthis.toString(2).padStart(16, '0').get(8)
-      if (rthis > 0xFFFF) {
-        rthis = rthis - 0x10000
+      val halfCarry = ((a and 0b11111111) + (b and 0b11111111)) > 0b11111111
+      setHalfCarry(halfCarry)
+      var rthis = a + b
+      if (rthis > 0xFFFF || rthis < 0) {
+        rthis = rthis and 0xFFFF
         setCarry(true)
       }
-      when ("$eighthHL$eighthBC$eighthAfter") {
-        "100", "010", "111", "110" -> setHalfCarry(true)
-      }
+
       return rthis
   }
   internal fun ADD(a: Short, b: Short): Short {
@@ -128,21 +124,17 @@ object CPU {
     setSubstract(false)
     setCarry(false)
     setZero(false)
-    val thirdHL = b.toString(2).padStart(8, '0').get(3)
-    val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis: Short = (b + a).toShort()
-    val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
+    val halfCarry = ((a.toInt() and 0b1111) + (b.toInt() and 0b1111)) > 0b1111
+    setHalfCarry(halfCarry)
+    var rthis = (b + a)
     if (rthis > 0xFF) {
-      rthis = (rthis - 0x100).toShort()
+      rthis = (rthis and 0xFF)
       setCarry(true)
     }
-    when ("$thirdHL$thirdBC$thirdAfter") {
-      "100", "010", "111", "110" -> setHalfCarry(true)
-    }
-    if (rthis == 0.toShort()) {
+    if (rthis == 0) {
       setZero(true)
     }
-    return rthis
+    return rthis.toShort()
   }
   internal fun ADC(a: Short, b: Short): Short {
     val c = if (getCarry()) 1 else 0
@@ -150,42 +142,34 @@ object CPU {
     setSubstract(false)
     setCarry(false)
     setZero(false)
-    val thirdHL = b.toString(2).padStart(8, '0').get(3)
-    val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (b + a + c).toShort()
-    val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
+    val halfCarry = ((a.toInt() and 0b1111) + (b.toInt() and 0b1111) + c) > 0b1111
+    setHalfCarry(halfCarry)
+    var rthis = a + b + c
     if (rthis > 0xFF) {
-      rthis = (rthis - 0x100).toShort()
+      rthis = (rthis and 0xFF)
       setCarry(true)
     }
-    when ("$thirdHL$thirdBC$thirdAfter") {
-      "100", "010", "111", "110" -> setHalfCarry(true)
-    }
-    if (rthis == 0.toShort()) {
+    if (rthis == 0) {
       setZero(true)
     }
-    return rthis
+    return rthis.toShort()
   }
   internal fun SUB(a: Short, b: Short): Short {
     setHalfCarry(false)
     setSubstract(true)
     setCarry(false)
     setZero(false)
-    val thirdHL = b.toString(2).padStart(8, '0').get(3)
-    val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = (a - b).toShort()
-    val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
+    val halfCarry = ((a.toInt() and 0b1111) - (b.toInt() and 0b1111)) < 0
+    setHalfCarry(halfCarry)
+    var rthis = (a - b)
     if (rthis < 0) {
-      rthis = (0x100 + rthis).toShort()
+      rthis = (rthis and 0xFF)
       setCarry(true)
     }
-    when ("$thirdHL$thirdBC$thirdAfter") {
-      "100", "010", "111", "110" -> setHalfCarry(true)
-    }
-    if (rthis == 0.toShort()) {
+    if (rthis == 0) {
       setZero(true)
     }
-    return rthis
+    return rthis.toShort()
   }
   internal fun SBC(a: Short, b: Short): Short {
     val c = if (getCarry()) 1 else 0
@@ -193,21 +177,17 @@ object CPU {
     setSubstract(true)
     setCarry(false)
     setZero(false)
-    val thirdHL = b.toString(2).padStart(8, '0').get(3)
-    val thirdBC = a.toString(2).padStart(8, '0').get(3)
-    var rthis = ((a - b) - c).toShort()
-    val thirdAfter = rthis.toString(2).padStart(8, '0').get(3)
+    val halfCarry = (((a.toInt() and 0b1111) - (b.toInt() and 0b1111)) - c) < 0
+    setHalfCarry(halfCarry)
+    var rthis = ((a - b) - c)
     if (rthis < 0) {
-      rthis = (0x100 + rthis).toShort()
+      rthis = (rthis and 0xFF)
       setCarry(true)
     }
-    when ("$thirdHL$thirdBC$thirdAfter") {
-      "100", "010", "111", "110" -> setHalfCarry(true)
-    }
-    if (rthis == 0.toShort()) {
+    if (rthis == 0) {
       setZero(true)
     }
-    return rthis
+    return rthis.toShort()
   }
   internal fun AND(a: Short, b: Short): Short {
     setZero(false)
@@ -437,7 +417,8 @@ object CPU {
     0x0f to { A = rrc(A); 4 },
     0x10 to {
       running = false
-      exitProcess(0)
+      //exitProcess(0)
+      4
     },
     0x11 to { DE = getNextWord(); 12 }, //ld DE, d16
     0x12 to { RAM.setByteAt(DE, A); 8 }, //ld (DE), A
@@ -446,7 +427,14 @@ object CPU {
     0x15 to { D = DEC(D); 4 }, //dec d
     0x16 to { D = RAM.getByteAt(PC++); 8 }, //ld D,d8
     0x17 to { A = rl(A); 4 }, //rla
-    0x18 to { PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1; 12 }, //JR r8
+    0x18 to {
+      PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1
+      if (PC > 0xFFFF || PC < 0) {
+        PC = PC and 0xFFFF
+        println(PC)
+      }
+      12
+    }, //JR r8
     0x19 to { HL = ADD(HL, DE); 8 }, // ADD HL,DE
     0x1a to { A = RAM.getByteAt(DE); 8 }, //ld A,(DE)
     0x1b to { DE = DEC(DE); 8 },
@@ -457,6 +445,10 @@ object CPU {
     0x20 to { //JR NZ,d8
       if (!getZero()) {
         PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1
+        if (PC > 0xFFFF || PC < 0) {
+          PC = PC and 0xFFFF
+          println(PC)
+        }
         12
       } else {
         PC++
@@ -474,27 +466,23 @@ object CPU {
     0x25 to { H = DEC(H); 4 },
     0x26 to { H = RAM.getByteAt(PC++); 8 },
     0x27 to { //daa
-      setCarry(false)
-      val a = A.toString(2).padStart(8, '0').substring(4).toInt(2)
-      if (a > 9 || getHalfCarry()) {
-        A = (A + 0x06.toShort()).toShort()
+      var a = A.toInt() and 0b1111
+      if (a > 9) {
+        A = ADD(A, 6)
       }
-      val b = A.toString(2).padStart(8, '0').substring(0, 4).toInt(2)
-      if (b > 9 || getCarry()) {
-        A = (A + 0x60.toShort()).toShort()
-        setCarry(true)
+      var b = (A.toInt() and 0b11110000) shr 4
+      if (b > 9) {
+        A = ADD(A, 0x60)
       }
-      setHalfCarry(false)
-      if ( A == 0.toShort()) {
-        setZero(true)
-      }
-      A = (A.toInt() and 0xFF).toShort()
       4
     },
     0x28 to { // JR Z,n 
       if (getZero()) {
         val offset = RAM.getByteAt(PC).toByte().toInt()
         PC = PC + offset + 1
+        if (PC > 0xFFFF || PC < 0) {
+          PC = PC and 0xFFFF
+        }
         12
       } else {
         PC++
@@ -524,6 +512,9 @@ object CPU {
     0x30 to {
       if (!getCarry()) {
         PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1
+        if (PC > 0xFFFF || PC < 0) {
+          PC = PC and 0xFFFF
+        }
         12
       } else {
         PC++
@@ -549,6 +540,9 @@ object CPU {
     0x38 to {
       if (getCarry()) {
         PC = PC + RAM.getByteAt(PC).toByte().toInt() + 1
+        if (PC > 0xFFFF || PC < 0) {
+          PC = PC and 0xFFFF
+        }
         12
       } else {
         PC++
@@ -936,7 +930,16 @@ object CPU {
       PC = 0x20
       16
     },
-    0xe8 to { SP = SP + (RAM.getByteAt(PC++).toByte()).toInt(); 16 },
+    0xe8 to {
+      val offset = RAM.getByteAt(PC++).toByte()
+      val uoffset = RAM.getByteAt(PC++)
+      val (_, l) = splitHighByteLowByte(SP)
+      ADD(l, uoffset)
+      SP = ADD(SP, offset.toInt())
+      setZero(false)
+      setSubstract(false)
+      16
+    },
     0xe9 to { PC = HL; 4 },
     0xea to { RAM.setByteAt(getNextWord(), A); 16 },
     0xee to { A = XOR(A, RAM.getByteAt(PC++)); 8 },
@@ -970,9 +973,23 @@ object CPU {
       PC = 0x30
       16
     },
-    0xf8 to { HL = SP + (RAM.getByteAt(PC++).toByte()).toInt(); 12 },
+    0xf8 to {
+      val offset = RAM.getByteAt(PC++).toByte()
+      val uoffset = RAM.getByteAt(PC++)
+      val (_, l) = splitHighByteLowByte(SP)
+      HL = ADD(SP, offset.toInt())
+      ADD(l, uoffset)
+      setZero(false)
+      setSubstract(false)
+      12
+    },
     0xf9 to { SP = HL; 8 },
-    0xfa to { A = RAM.getByteAt(getNextWord()); 16 },
+    0xfa to {
+      val addr = getNextWord()
+      val newA = RAM.getByteAt(addr)
+      A = newA
+      16
+    },
     0xfb to { interrupts = true; 4 },
     0xfe to { SUB(A, RAM.getByteAt(PC++)); 8 },
     0xff to {
@@ -1282,7 +1299,7 @@ object CPU {
 
   @Synchronized override fun toString() = """
 CPU state
-PC: ${PC.toString(16)}
+PC: ${(PC - 1).toString(16)}
 SP: ${SP.toString(16)}
 A: ${A.toString(16)} B: ${B.toString(16)} C: ${C.toString(16)} D: ${D.toString(16)}
 E: ${E.toString(16)} H: ${H.toString(16)} L: ${L.toString(16)}
@@ -1297,10 +1314,15 @@ CurrentOP: ${op.toString(16)}
 
   fun tick(): Int {
     if (running) {
-      CPU.op = RAM.getByteAt(PC++).toInt()
+      op = RAM.getByteAt(PC++).toInt()
       if (print) {
         println(CPU)
-        readLine()
+        print("RAM Adresse (Hex) eingeben zum inspizieren: ")
+        val printOp = readLine()
+        if (printOp?.trim() != "") {
+          val addr = printOp?.toInt(16) ?: 0
+          println("Addresse: ${addr.toString(16)}: ${RAM.getByteAt(addr).toInt().toString(16)}")
+        }
       }
       if (prefix) {
         time += prefixOpcodes.get(op)!!()

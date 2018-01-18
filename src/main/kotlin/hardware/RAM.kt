@@ -3,6 +3,7 @@ import de.prt.gb.hardware.mbc.MBC1
 import de.prt.gb.hardware.mbc.ROM
 import de.prt.gb.hardware.mbc.Unsupported
 import de.prt.gb.hardware.mbc.MemoryBankController
+import kotlin.system.exitProcess
 
 internal object CARTRIDGE {
   private var name = ""
@@ -55,13 +56,25 @@ internal object RAM {
         val state = Input.getState(mode)
         state
       }
+      in 0xFFA0..0xFFEF -> 0xFF.toShort()
       else -> ram[addr]
     }
   }
   @Synchronized fun load(addr: Int, dat: List<Short>) {
-    dat.forEachIndexed({ i: Int, d: Short -> ram[addr + i] = d })
+    dat.forEachIndexed({
+      i: Int, d: Short ->
+        if (d > 255 || d < 0) {
+          println(addr)
+          exitProcess( -1 )
+        }
+        ram[addr + i] = d
+      })
   }
   @Synchronized fun setByteAt(addr: Int, value: Short, hardware: Boolean = false) {
+    if (value < 0) {
+      println(CPU)
+      exitProcess(-1)
+    }
     if (hardware) {
       ram[addr] = value
     } else {
@@ -77,12 +90,13 @@ internal object RAM {
           ram[0xFE00 + i] = ram[curr]
         })
         0xFF50 -> if (biosMapped) biosMapped = false else ram[addr] = value
+        in 0xFFA0..0xFFEF -> return
         else -> ram[addr] = value
       }
     }
   }
   fun setWordAt(addr: Int, value: Int) {
-    val h = value and 0xFF00
+    val h = (value and 0xFF00) shr 8
     val l = value and 0xFF
     setByteAt(addr, h.toShort())
     setByteAt(addr + 1, l.toShort())

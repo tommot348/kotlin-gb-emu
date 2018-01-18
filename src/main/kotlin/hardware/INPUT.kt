@@ -22,6 +22,7 @@ object Input : KeyListener {
       KeyEvent.VK_Y -> b = true
     }
     if (true in listOf(a, b, select, start, up, down, left, right)) {
+      CPU.running = true
       val interruptFlags = RAM.getByteAt(0xFF0F)
       RAM.setByteAt(
             0xFF0F,
@@ -39,8 +40,7 @@ object Input : KeyListener {
       KeyEvent.VK_SPACE -> select = false
       KeyEvent.VK_A -> a = false
       KeyEvent.VK_Y -> b = false
-      KeyEvent.VK_P -> println(CPU)
-      KeyEvent.VK_S -> CPU.running = !CPU.running
+      KeyEvent.VK_P -> CPU.print = !CPU.print
     }
   }
   override fun keyTyped(e: KeyEvent) {}
