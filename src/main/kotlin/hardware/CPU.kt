@@ -229,9 +229,11 @@ object CPU {
     var newA = (a.toInt() shl 1)
     val c = if (getCarry()) 1 else 0
     newA = newA + c
-    if (newA > 0xFF) {
+    if (newA > 0xFF || newA < 0) {
       setCarry(true)
-      newA = newA and 0xFF
+      newA = (newA and 0xFF)
+    } else {
+      setCarry(false)
     }
     if (prefix) {
       if (newA == 0) {
@@ -245,12 +247,13 @@ object CPU {
     setHalfCarry(false)
     setSubstract(false)
     var newA = (a.toInt() shl 1)
-    println(newA.toString(2))
-    if (newA > 0xFF) {
+    if (newA > 0xFF || newA < 0) {
       setCarry(true)
-      newA++
+      newA = newA + 1
+    } else {
+      setCarry(false)
     }
-    newA = newA and 0xFF
+    newA = (newA and 0xFF)
     if (prefix) {
       if (newA == 0) {
         setZero(true)
@@ -263,8 +266,8 @@ object CPU {
     setZero(false)
     setHalfCarry(false)
     setSubstract(false)
-    val carry = ((a % 2) == 1)
-    var newA = (a.toInt() shr 1)
+    val carry = ((a.toInt() and 1) == 1)
+    var newA = (a.toInt() ushr 1)
     val c = if (getCarry()) 0b10000000 else 0
     setCarry(carry)
     newA = newA + c
@@ -279,8 +282,8 @@ object CPU {
     setZero(false)
     setHalfCarry(false)
     setSubstract(false)
-    val carry = ((a % 2) == 1)
-    var newA = (a.toInt() shr 1)
+    val carry = ((a.toInt() and 1) == 1)
+    var newA = (a.toInt() ushr 1)
     if (carry) {
       newA = newA + 0b10000000
     }
@@ -478,11 +481,11 @@ object CPU {
     0x26 to { H = RAM.getByteAt(PC++); 8 },
     0x27 to { //daa
       var a = A.toInt() and 0b1111
-      if (a > 9) {
+      if (a > 9 || getHalfCarry()) {
         A = (A + 6).toShort()
       }
       var b = (A.toInt() and 0b11110000) shr 4
-      if (b > 9) {
+      if (b > 9 || getCarry()) {
         A = (A + 0x60).toShort()
       }
       if (A > 0xFF) {
