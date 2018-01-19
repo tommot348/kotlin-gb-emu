@@ -30,8 +30,11 @@ fun main(args: Array<String>) {
     try {
       CPU.handleInterrupts()
       val time = CPU.tick()
+      CPU.handleInterrupts()
       TIMER.tick(time)
+      CPU.handleInterrupts()
       GPU.tick(time)
+      CPU.handleInterrupts()
       /*if (System.nanoTime() % 110 == 0L) {
         Thread.sleep(1)
       }*/

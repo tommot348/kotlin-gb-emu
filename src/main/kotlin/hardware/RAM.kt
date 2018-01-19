@@ -83,6 +83,7 @@ internal object RAM {
         in 0xA000..0xBFFF -> {
           CARTRIDGE.setByteAt(addr, value)
         }
+        0xFF01 -> SERIAL.out(value)
         0xFF04 -> ram[0xFF04] = 0
         0xFF07 -> TIMER.selectSpeed(value.toInt())
         0xFF44 -> ram[0xFF44] = 0

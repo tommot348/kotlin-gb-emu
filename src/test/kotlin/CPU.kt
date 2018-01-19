@@ -35,15 +35,15 @@ class TestCPU {
       assertEquals(0b11111111, CPU.L)
     }
     @Test fun testALU() {
-      assertEquals(1, CPU.INC(0))
+      assertEquals(1, CPU.INC_16(0, 0))
       assertEquals(1, CPU.INC(0.toShort()))
       assertEquals(0, CPU.INC(255.toShort()))
-      assertEquals(0, CPU.INC(0xFFFF))
+      assertEquals(0, CPU.INC_16(0xFF, 0xFF))
 
       assertEquals(0, CPU.DEC(1.toShort()))
-      assertEquals(0, CPU.DEC(1))
+      assertEquals(0, CPU.DEC_16(0, 1))
       assertEquals(255, CPU.DEC(0.toShort()))
-      assertEquals(0xFFFF, CPU.DEC(0))
+      assertEquals(0xFFFF, CPU.DEC_16(0, 0))
 
       assertEquals(3.toShort(), CPU.ADD(0.toShort(), 3.toShort()))
       assertEquals(2.toShort(), CPU.ADD(255.toShort(), 3.toShort()))
@@ -68,6 +68,17 @@ class TestCPU {
       assertEquals(0b111100, CPU.OR(0, 0b111100))
       assertEquals(0b11001100, CPU.XOR(0b11110000, 0b00111100))
       assertEquals(0, CPU.XOR(0b11111111, 0b11111111))
+      CPU.HL_ADD(1, 1)
+      assertEquals(0x0101, CPU.HL)
+      CPU.HL_ADD(0xFF, 0xFF)
+      assertEquals(0x0100, CPU.HL)
+      assertEquals(true, CPU.getHalfCarry())
+      assertEquals(true, CPU.getCarry())
+      CPU.HL = 0
+      CPU.SP_ADD_OFFSET(1.toByte())
+      assertEquals(0x1, CPU.SP)
+      CPU.SP_ADD_OFFSET((-1).toByte())
+      assertEquals(0, CPU.SP)
     }
     @Test fun testRotateShift() {
       CPU.setCarry(false)
@@ -97,7 +108,7 @@ class TestCPU {
     }
     @Test fun testBitTwiddling() {
       assertEquals(0b1111, CPU.swap(0b11110000))
-      assertEquals('0', CPU.BIT(0b10000000, 7))
+      assertEquals(false, CPU.BIT(0b10000000, 7))
       assertEquals(0b10000000, CPU.SET(0, 7))
       assertEquals(0, CPU.RES(0b10000000, 7))
     }

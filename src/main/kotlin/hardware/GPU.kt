@@ -185,7 +185,7 @@ object GPU {
     var statStr = stat.toString(2).padStart(8, '0')
     val interruptFlags = RAM.getByteAt(0xFF0F)
     if (getBit(lcdc, 7) == '1') {
-      clocksTillNextState -= (clock - lastClock)
+      clocksTillNextState -= clock
       val ly = RAM.getByteAt(0xFF44)
       val lyc = RAM.getByteAt(0xFF45)
       if (ly == lyc) {
@@ -283,7 +283,6 @@ object GPU {
         statStr = statStr.substring(0, 6) + state.toString(2)
       }
     }
-    lastClock = clock
     RAM.setByteAt(0xFF41, (statStr).toShort(2), true)
   }
 }
