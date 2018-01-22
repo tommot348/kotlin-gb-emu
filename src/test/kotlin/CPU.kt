@@ -74,6 +74,9 @@ class TestCPU {
       assertEquals(0x0100, CPU.HL)
       assertEquals(true, CPU.getHalfCarry())
       assertEquals(true, CPU.getCarry())
+      CPU.HL = 0xFFFF
+      CPU.HL_ADD(0xFF, 0xFF)
+      assertEquals(0xFFFE, CPU.HL)
       CPU.HL = 0
       CPU.SP_ADD_OFFSET(1.toByte())
       assertEquals(0x1, CPU.SP)

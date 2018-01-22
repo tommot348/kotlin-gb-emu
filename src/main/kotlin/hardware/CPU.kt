@@ -1,5 +1,4 @@
 package de.prt.gb.hardware
-// import kotlin.system.exitProcess
 
 object CPU {
   internal var A: Short = 0
@@ -79,7 +78,7 @@ object CPU {
   }
   internal fun INC_16(hb: Short, lb: Short): Int {
     val newL = lb + 1
-    val newH = (hb + (newL shr 8))
+    val newH = (hb + (newL ushr 8))
     return ((newH and 0xFF) shl 8) + (newL and 0xFF)
   }
   internal fun DEC_16(hb: Short, lb: Short): Int {
@@ -90,40 +89,46 @@ object CPU {
 
   internal fun HL_ADD(hb: Short, lb: Short) {
     setSubstract(false)
+    val halfCarry =
+      ((L.toInt() and 0b1111_1111_1111)
+        + (lb.toInt() and 0b1111_1111_1111)) > 0b1111_1111_1111
+    setHalfCarry(halfCarry)
+    if (H + hb > 0xFF) {
+      setCarry(true)
+    }
     val newL = L + lb
-    val newH = (H + hb + (newL shr 8))
-    setHalfCarry(newL > 0xFF)
-    setCarry(newH > 0xFF)
+    val newH = (H + hb + (newL ushr 8))
+    // setHalfCarry(newL > 0xFF)
+    // setCarry(newH > 0xFF)
     H = (newH and 0xFF).toShort()
     L = (newL and 0xFF).toShort()
   }
 
-  internal fun SP_ADD_OFFSET(off: Byte) {
+  internal fun SP_ADD_OFFSET(usoff: Short): Pair<Short, Short> {
     setHalfCarry(false)
     setSubstract(false)
     setCarry(false)
     setZero(false)
-    if (off > 0) {
-      val halfCarry = ((SPl.toInt() and 0b1111) + (off.toInt() and 0b1111)) > 0b1111
+    val off = usoff.toByte()
+    return if (off > 0) {
+      val halfCarry = ((SPl.toInt() and 0b1111) + (usoff.toInt() and 0b1111)) > 0b1111
       setHalfCarry(halfCarry)
+      if (SPl + usoff > 0xFF) {
+        setCarry(true)
+      }
       var newSPl = (SPl + off)
       var overflow = newSPl shr 8
-      if (newSPl > 0xFF) {
+      Pair(((SPh + overflow) and 0xFF).toShort(), (newSPl and 0xFF).toShort())
+    } else {
+      val halfCarry = ((SPl.toInt() and 0b1111) + (usoff.toInt() and 0b1111)) > 0b1111
+      setHalfCarry(halfCarry)
+      if (SPl + usoff > 0xFF) {
         setCarry(true)
       }
-      SPh = ((SPh + overflow) and 0xFF).toShort()
-      SPl = (newSPl and 0xFF).toShort()
-    } else {
       val newOff = (off * -1).toShort()
-      val halfCarry = ((SPl.toInt() and 0b1111) - (newOff.toInt() and 0b1111)) < 0
-      setHalfCarry(halfCarry)
       var newSPl = SPl - newOff
       var overflow = (newSPl and 0x1FF) shr 8
-      if (newSPl < 0) {
-        setCarry(true)
-      }
-      SPh = ((SPh - overflow) and 0xFF).toShort()
-      SPl = (newSPl and 0xFF).toShort()
+      Pair(((SPh - overflow) and 0xFF).toShort(), (newSPl and 0xFF).toShort())
     }
   }
 
@@ -344,7 +349,10 @@ object CPU {
     return (a.toInt() or (1 shl c)).toShort()
   }
   internal fun RES(a: Short, c: Int): Short {
-    return (a.toInt() and (0 shl c)).toShort()
+    var mask = 0xFE shl c
+    mask = mask + ((mask and 0xFF00) ushr 8)
+    mask = mask and 0xFF
+    return (a.toInt() and mask).toShort()
   }
 
   internal var SP: Int
@@ -468,6 +476,7 @@ object CPU {
     0x07 to { A = rlc(A); 4 }, // RLCA
     0x08 to {
       val a = getNextWord() //ld (a16), SP
+      // println("0x08 ${a.toString(16)}")
       RAM.setWordAt(a, SP)
       20
     },
@@ -480,7 +489,6 @@ object CPU {
     0x0f to { A = rrc(A); 4 },
     0x10 to {
       running = false
-      //exitProcess(0)
       4
     },
     0x11 to { DE = getNextWord(); 12 }, //ld DE, d16
@@ -636,7 +644,12 @@ object CPU {
     0x73 to { RAM.setByteAt(HL, E); 8 },
     0x74 to { RAM.setByteAt(HL, H); 8 },
     0x75 to { RAM.setByteAt(HL, L); 8 },
-    0x76 to { running = false; 4 },
+    0x76 to {
+      running = false
+      if (!interrupts) {
+        PC++
+      }
+      4 },
     0x77 to { RAM.setByteAt(HL, A); 8 },
     0x78 to { A = B; 4 },
     0x79 to { A = C; 4 },
@@ -762,14 +775,24 @@ object CPU {
     0xdc to { call(getCarry()) },
     0xde to { A = SBC(A, RAM.getByteAt(PC++)); 8 },
     0xdf to { rst(0x18) },
-    0xe0 to { RAM.setByteAt(0x0000FF00 + RAM.getByteAt(PC++).toInt(), A); 12 },
+    0xe0 to {
+      val a = 0xFF00 + RAM.getByteAt(PC++).toInt()
+      // println("0xe0 ${a.toString(16)}")
+      RAM.setByteAt(a, A)
+      12
+    },
     0xe1 to {
       L = RAM.getByteAt(SP)
       H = RAM.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
-    0xe2 to { RAM.setByteAt(0x0000FF00 + C.toInt(), A); 8 },
+    0xe2 to {
+      val a = 0xFF00 + C.toInt()
+      // println("0xe2 ${a.toString(16)}")
+      RAM.setByteAt(a, A)
+      8
+    },
     0xe5 to {
       RAM.setByteAt(SP - 1, H)
       RAM.setByteAt(SP - 2, L)
@@ -779,22 +802,39 @@ object CPU {
     0xe6 to { A = AND(A, RAM.getByteAt(PC++)); 8 },
     0xe7 to { rst(0x20) },
     0xe8 to {
-      val offset = RAM.getByteAt(PC++).toByte()
-      SP_ADD_OFFSET(offset)
+      val offset = RAM.getByteAt(PC++)
+      val (h, l) = SP_ADD_OFFSET(offset)
+      SPh = h
+      SPl = l
       16
     },
     0xe9 to { PC = HL; 4 },
-    0xea to { RAM.setByteAt(getNextWord(), A); 16 },
+    0xea to {
+      val a = getNextWord()
+      // println("0xea ${a.toString(16)}")
+      RAM.setByteAt(a, A)
+      16
+    },
     0xee to { A = XOR(A, RAM.getByteAt(PC++)); 8 },
     0xef to { rst(0x28) },
-    0xf0 to { A = RAM.getByteAt(0x0000FF00 + RAM.getByteAt(PC++).toInt()); 12 },
+    0xf0 to {
+      val a = 0xFF00 + RAM.getByteAt(PC++)
+      // println("0xf0 ${a.toString(16)}")
+      A = RAM.getByteAt(a)
+      12
+    },
     0xf1 to {
       F = RAM.getByteAt(SP)
       A = RAM.getByteAt(SP + 1)
       SP = SP + 2
       12
     },
-    0xf2 to { A = RAM.getByteAt(0x0000FF00 + C.toInt()); 8 },
+    0xf2 to {
+      val a = 0xFF00 + C
+      // println("0xf2 ${a.toString(16)}")
+      A = RAM.getByteAt(a)
+      8
+    },
     0xf3 to { interrupts = false; 4 },
     0xf5 to {
       RAM.setByteAt(SP - 1, A)
@@ -805,50 +845,56 @@ object CPU {
     0xf6 to { A = OR(A, RAM.getByteAt(PC++)); 8 },
     0xf7 to { rst(0x30) },
     0xf8 to {
-      val offset = RAM.getByteAt(PC++).toByte()
-      SP_ADD_OFFSET(offset)
-      HL = SP
+      val offset = RAM.getByteAt(PC++)
+      val (h, l) = SP_ADD_OFFSET(offset)
+      H = h
+      L = l
       12
     },
     0xf9 to { SP = HL; 8 },
-    0xfa to { A = RAM.getByteAt(getNextWord()); 16 },
+    0xfa to {
+      val a = getNextWord()
+      // println("0xfa ${a.toString(16)}")
+      A = RAM.getByteAt(a)
+      16
+    },
     0xfb to { interrupts = true; 4 },
     0xfe to { SUB(A, RAM.getByteAt(PC++)); 8 },
     0xff to { rst(0x38) }
   )
   internal val prefixOpcodes: Map<Int, ()->Int> = mapOf(
-    0x00 to { B = rlc(B); 4 },
-    0x01 to { C = rlc(C); 4 },
-    0x02 to { D = rlc(D); 4 },
-    0x03 to { E = rlc(E); 4 },
-    0x04 to { H = rlc(H); 4 },
-    0x05 to { L = rlc(L); 4 },
+    0x00 to { B = rlc(B); 8 },
+    0x01 to { C = rlc(C); 8 },
+    0x02 to { D = rlc(D); 8 },
+    0x03 to { E = rlc(E); 8 },
+    0x04 to { H = rlc(H); 8 },
+    0x05 to { L = rlc(L); 8 },
     0x06 to { RAM.setByteAt(HL, rlc(RAM.getByteAt(HL))); 16 },
-    0x07 to { A = rlc(A); 4 },
-    0x08 to { B = rrc(B); 4 },
-    0x09 to { C = rrc(C); 4 },
-    0x0a to { D = rrc(D); 4 },
-    0x0b to { E = rrc(E); 4 },
-    0x0c to { H = rrc(H); 4 },
-    0x0d to { L = rrc(L); 4 },
+    0x07 to { A = rlc(A); 8 },
+    0x08 to { B = rrc(B); 8 },
+    0x09 to { C = rrc(C); 8 },
+    0x0a to { D = rrc(D); 8 },
+    0x0b to { E = rrc(E); 8 },
+    0x0c to { H = rrc(H); 8 },
+    0x0d to { L = rrc(L); 8 },
     0x0e to { RAM.setByteAt(HL, rrc(RAM.getByteAt(HL))); 16 },
-    0x0f to { A = rrc(A); 4 },
-    0x10 to { B = rl(B); 4 },
-    0x11 to { C = rl(C); 4 },
-    0x12 to { D = rl(D); 4 },
-    0x13 to { E = rl(E); 4 },
-    0x14 to { H = rl(H); 4 },
-    0x15 to { L = rl(L); 4 },
+    0x0f to { A = rrc(A); 8 },
+    0x10 to { B = rl(B); 8 },
+    0x11 to { C = rl(C); 8 },
+    0x12 to { D = rl(D); 8 },
+    0x13 to { E = rl(E); 8 },
+    0x14 to { H = rl(H); 8 },
+    0x15 to { L = rl(L); 8 },
     0x16 to { RAM.setByteAt(HL, rl(RAM.getByteAt(HL))); 16 },
-    0x17 to { A = rl(A); 4 },
-    0x18 to { B = rr(B); 4 },
-    0x19 to { C = rr(C); 4 },
-    0x1a to { D = rr(D); 4 },
-    0x1b to { E = rr(E); 4 },
-    0x1c to { H = rr(H); 4 },
-    0x1d to { L = rr(L); 4 },
+    0x17 to { A = rl(A); 8 },
+    0x18 to { B = rr(B); 8 },
+    0x19 to { C = rr(C); 8 },
+    0x1a to { D = rr(D); 8 },
+    0x1b to { E = rr(E); 8 },
+    0x1c to { H = rr(H); 8 },
+    0x1d to { L = rr(L); 8 },
     0x1e to { RAM.setByteAt(HL, rr(RAM.getByteAt(HL))); 16 },
-    0x1f to { A = rr(A); 4 },
+    0x1f to { A = rr(A); 8 },
     0x20 to { B = sla(B); 8 },
     0x21 to { C = sla(C); 8 },
     0x22 to { D = sla(D); 8 },
@@ -887,7 +933,7 @@ object CPU {
     0x43 to { setZero(BIT(E, 0)); 8 },
     0x44 to { setZero(BIT(H, 0)); 8 },
     0x45 to { setZero(BIT(L, 0)); 8 },
-    0x46 to { setZero(BIT(RAM.getByteAt(HL), 0)); 12 },
+    0x46 to { setZero(BIT(RAM.getByteAt(HL), 0)); 16 },
     0x47 to { setZero(BIT(A, 0)); 8 },
     0x48 to { setZero(BIT(B, 1)); 8 },
     0x49 to { setZero(BIT(C, 1)); 8 },
@@ -895,7 +941,7 @@ object CPU {
     0x4b to { setZero(BIT(E, 1)); 8 },
     0x4c to { setZero(BIT(H, 1)); 8 },
     0x4d to { setZero(BIT(L, 1)); 8 },
-    0x4e to { setZero(BIT(RAM.getByteAt(HL), 1)); 12 },
+    0x4e to { setZero(BIT(RAM.getByteAt(HL), 1)); 16 },
     0x4f to { setZero(BIT(A, 1)); 8 },
     0x50 to { setZero(BIT(B, 2)); 8 },
     0x51 to { setZero(BIT(C, 2)); 8 },
@@ -903,7 +949,7 @@ object CPU {
     0x53 to { setZero(BIT(E, 2)); 8 },
     0x54 to { setZero(BIT(H, 2)); 8 },
     0x55 to { setZero(BIT(L, 2)); 8 },
-    0x56 to { setZero(BIT(RAM.getByteAt(HL), 2)); 12 },
+    0x56 to { setZero(BIT(RAM.getByteAt(HL), 2)); 16 },
     0x57 to { setZero(BIT(A, 2)); 8 },
     0x58 to { setZero(BIT(B, 3)); 8 },
     0x59 to { setZero(BIT(C, 3)); 8 },
@@ -911,7 +957,7 @@ object CPU {
     0x5b to { setZero(BIT(E, 3)); 8 },
     0x5c to { setZero(BIT(H, 3)); 8 },
     0x5d to { setZero(BIT(L, 3)); 8 },
-    0x5e to { setZero(BIT(RAM.getByteAt(HL), 3)); 12 },
+    0x5e to { setZero(BIT(RAM.getByteAt(HL), 3)); 16 },
     0x5f to { setZero(BIT(A, 3)); 8 },
     0x60 to { setZero(BIT(B, 4)); 8 },
     0x61 to { setZero(BIT(C, 4)); 8 },
@@ -919,7 +965,7 @@ object CPU {
     0x63 to { setZero(BIT(E, 4)); 8 },
     0x64 to { setZero(BIT(H, 4)); 8 },
     0x65 to { setZero(BIT(L, 4)); 8 },
-    0x66 to { setZero(BIT(RAM.getByteAt(HL), 4)); 12 },
+    0x66 to { setZero(BIT(RAM.getByteAt(HL), 4)); 16 },
     0x67 to { setZero(BIT(A, 4)); 8 },
     0x68 to { setZero(BIT(B, 5)); 8 },
     0x69 to { setZero(BIT(C, 5)); 8 },
@@ -927,7 +973,7 @@ object CPU {
     0x6b to { setZero(BIT(E, 5)); 8 },
     0x6c to { setZero(BIT(H, 5)); 8 },
     0x6d to { setZero(BIT(L, 5)); 8 },
-    0x6e to { setZero(BIT(RAM.getByteAt(HL), 5)); 12 },
+    0x6e to { setZero(BIT(RAM.getByteAt(HL), 5)); 16 },
     0x6f to { setZero(BIT(A, 5)); 8 },
     0x70 to { setZero(BIT(B, 6)); 8 },
     0x71 to { setZero(BIT(C, 6)); 8 },
@@ -935,7 +981,7 @@ object CPU {
     0x73 to { setZero(BIT(E, 6)); 8 },
     0x74 to { setZero(BIT(H, 6)); 8 },
     0x75 to { setZero(BIT(L, 6)); 8 },
-    0x76 to { setZero(BIT(RAM.getByteAt(HL), 6)); 12 },
+    0x76 to { setZero(BIT(RAM.getByteAt(HL), 6)); 16 },
     0x77 to { setZero(BIT(A, 6)); 8 },
     0x78 to { setZero(BIT(B, 7)); 8 },
     0x79 to { setZero(BIT(C, 7)); 8 },
@@ -943,7 +989,7 @@ object CPU {
     0x7b to { setZero(BIT(E, 7)); 8 },
     0x7c to { setZero(BIT(H, 7)); 8 },
     0x7d to { setZero(BIT(L, 7)); 8 },
-    0x7e to { setZero(BIT(RAM.getByteAt(HL), 7)); 12 },
+    0x7e to { setZero(BIT(RAM.getByteAt(HL), 7)); 16 },
     0x7f to { setZero(BIT(A, 7)); 8 },
     0x80 to { B = RES(B, 0); 8 },
     0x81 to { C = RES(C, 0); 8 },
@@ -1075,7 +1121,6 @@ object CPU {
     0xff to { A = SET(A, 7); 8 }
   )
   internal fun INT(addr: Int) {
-    running = true
     interrupts = false
     RAM.setByteAt(SP - 1, PCh)
     RAM.setByteAt(SP - 2, PCl)
@@ -1087,6 +1132,7 @@ object CPU {
       val ints = RAM.getByteAt(0xFF0F).toInt()
       val intsEnabled = RAM.getByteAt(0xFFFF).toInt()
       if ((ints and intsEnabled) > 0) {
+        running = true
         when {
           (ints and 0b1) == 1 -> {
             RAM.setByteAt(0xFF0F, (ints and 0b11111110).toShort())
@@ -1097,7 +1143,7 @@ object CPU {
             INT(0x48)
           }
           (ints and 0b100) == 0b100 -> {
-            println("Timer")
+            // println("Timer")
             RAM.setByteAt(0xFF0F, (ints and 0b11111011).toShort())
             INT(0x50)
           }
@@ -1142,8 +1188,9 @@ CurrentOP: ${op.toString(16)}
         }
       }
       if (prefix) {
+        val ret = prefixOpcodes.get(op)!!()
         prefix = false
-        return prefixOpcodes.get(op)!!()
+        return ret
       } else {
         return opcodes.get(op)!!()
       }
