@@ -90,8 +90,8 @@ object CPU {
   internal fun HL_ADD(hb: Short, lb: Short) {
     setSubstract(false)
     val halfCarry =
-      ((L.toInt() and 0b1111_1111_1111)
-        + (lb.toInt() and 0b1111_1111_1111)) > 0b1111_1111_1111
+      ((H.toInt() and 0b1111)
+        + (hb.toInt() and 0b1111) + ((L + lb) ushr 8)) > 0b1111
     setHalfCarry(halfCarry)
     if (H + hb > 0xFF) {
       setCarry(true)
