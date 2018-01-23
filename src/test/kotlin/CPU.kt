@@ -33,6 +33,12 @@ class TestCPU {
       CPU.HL = 0b0000000011111111
       assertEquals(0, CPU.H)
       assertEquals(0b11111111, CPU.L)
+      CPU.SP = 0xFFFE
+      assertEquals(0xFF, CPU.SPh)
+      assertEquals(0xFE, CPU.SPl)
+      CPU.SP = 0xEFFE
+      assertEquals(0xEF, CPU.SPh)
+      assertEquals(0xFE, CPU.SPl)
     }
     @Test fun testALU() {
       assertEquals(1, CPU.INC_16(0, 0))
@@ -78,9 +84,13 @@ class TestCPU {
       CPU.HL_ADD(0xFF, 0xFF)
       assertEquals(0xFFFE, CPU.HL)
       CPU.HL = 0
-      CPU.SP_ADD_OFFSET(1.toByte())
+      val (h, l) = CPU.SP_ADD_OFFSET(1.toByte())
+      CPU.SPh = h
+      CPU.SPl = l
       assertEquals(0x1, CPU.SP)
-      CPU.SP_ADD_OFFSET((-1).toByte())
+      val (nh, nl) = CPU.SP_ADD_OFFSET((-1).toByte())
+      CPU.SPh = nh
+      CPU.SPl = nl
       assertEquals(0, CPU.SP)
     }
     @Test fun testRotateShift() {

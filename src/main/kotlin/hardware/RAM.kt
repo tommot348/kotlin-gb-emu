@@ -6,11 +6,8 @@ import de.prt.gb.hardware.mbc.MemoryBankController
 import kotlin.system.exitProcess
 
 internal object CARTRIDGE {
-  private var name = ""
   private var mbc: MemoryBankController? = null
   fun load(dat: List<Short>) {
-    val title = dat.slice(0x0134..0x0143).map({ it.toChar() }).toString()
-    name = title
     mbc = when (dat[0x0147].toInt()) {
       0 -> ROM()
       1 -> MBC1()
@@ -56,7 +53,7 @@ internal object RAM {
         val state = Input.getState(mode)
         state
       }
-      in 0xFFA0..0xFFEF -> 0xFF.toShort()
+      in 0xFEA0..0xFEFF -> 0xFF.toShort()
       else -> ram[addr]
     }
   }
@@ -91,7 +88,10 @@ internal object RAM {
           ram[0xFE00 + i] = ram[curr]
         })
         0xFF50 -> if (biosMapped) biosMapped = false else ram[addr] = value
-//        in 0xFFA0..0xFFEF -> return
+        0xFFFF -> {
+          println("newIntsEnabled: ${value.toString(2)}")
+          ram[addr] = value
+        }
         else -> ram[addr] = value
       }
     }
@@ -99,8 +99,8 @@ internal object RAM {
   fun setWordAt(addr: Int, value: Int) {
     val h = (value and 0xFF00) shr 8
     val l = value and 0xFF
-    setByteAt(addr, h.toShort())
-    setByteAt(addr + 1, l.toShort())
+    setByteAt((addr + 1) and 0xFFFF, h.toShort())
+    setByteAt(addr, l.toShort())
   }
   override fun toString() = ram.map({ it.toString(16).padStart(2, '0') }).reduceIndexed({
     i, prev, curr ->

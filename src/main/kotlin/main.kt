@@ -35,9 +35,6 @@ fun main(args: Array<String>) {
       CPU.handleInterrupts()
       GPU.tick(time)
       CPU.handleInterrupts()
-      /*if (System.nanoTime() % 110 == 0L) {
-        Thread.sleep(1)
-      }*/
     } catch (e: Exception) {
       e.printStackTrace()
       println(CPU)
