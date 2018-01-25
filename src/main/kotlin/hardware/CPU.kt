@@ -1105,48 +1105,36 @@ object CPU {
     0xfe to { RAM.setByteAt(HL, SET(RAM.getByteAt(HL), 7)); 16 },
     0xff to { A = SET(A, 7); 8 }
   )
-  internal fun INT(addr: Int): () -> Unit {
+  internal fun INT(addr: Int): () -> Int {
     return {
       interrupts = false
       push(PCh, PCl)
       PC = addr
+      20
     }
   }
   fun handleInterrupts() {
     val ints = checkInterrupts()
-    if (running) {
-      while (ints.size > 0) {
-        ints.removeAt(0)() //call int
-        while (!interrupts) {
-          //execute interrupt
-          time += CPU.tick()
-        }
-      }
-    } else {
-      if (ints.size > 0) {
-        ints.removeAt(0)() //call first int
-      }
-      while (!interrupts) {
-        //execute interrupt
-        val time = CPU.tick()
-        TIMER.tick(time)
-        GPU.tick(time)
-      }
+    if (ints.size > 0) {
+      running = true
+      val time = ((ints.removeAt(0))())
+      TIMER.tick(time)
+      GPU.tick(time)
     }
   }
-  private fun checkInterrupts(): ArrayList<()->Unit> {
-    val int = ArrayList<()->Unit>()
+  private fun checkInterrupts(): ArrayList<()->Int> {
+    val int = ArrayList<()->Int>()
     do {
       val intsRequested = RAM.getByteAt(0xFF0F).toInt()
       val intsEnabled = RAM.getByteAt(0xFFFF).toInt()
-      val ints = if (running) {
-        if (interrupts) {
-          intsEnabled and intsRequested
-        } else {
-          0
-        }
+      val ints = if (interrupts || !running) {
+          if (running) {
+            intsEnabled and intsRequested
+          } else {
+            intsRequested
+          }
       } else {
-        intsRequested and intsEnabled
+        0
       }
       when {
         (ints and 0b1) == 1 -> {

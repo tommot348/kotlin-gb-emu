@@ -183,7 +183,7 @@ object GPU {
     val lcdc = RAM.getByteAt(0xFF40)
     val stat = RAM.getByteAt(0xFF41)
     var statStr = stat.toString(2).padStart(8, '0')
-    val interruptFlags = RAM.getByteAt(0xFF0F)
+    var interruptFlags = RAM.getByteAt(0xFF0F).toInt()
     if (getBit(lcdc, 7) == '1') {
       clocksTillNextState -= clock
       val ly = RAM.getByteAt(0xFF44)
@@ -191,10 +191,7 @@ object GPU {
       if (ly == lyc) {
         statStr = statStr.substring(0, 5) + "1" + statStr.substring(6)
         if (getBit(stat, 6) == '1') {
-          RAM.setByteAt(
-              0xFF0F,
-              (interruptFlags.toInt() or 0b10).toShort(),
-              true)
+          interruptFlags = (interruptFlags or 0b10)
         }
       }
 
@@ -203,29 +200,20 @@ object GPU {
           0 -> if (ly < 144) {
             RAM.setByteAt(0xFF44, (ly + 1).toShort(), true)
             if (getBit(stat, 5) == '1') {
-              RAM.setByteAt(
-                  0xFF0F,
-                  (interruptFlags.toInt() or 0b10).toShort(),
-                  true)
+              interruptFlags = (interruptFlags or 0b10)
             }
             //add line
             lines.add(getLine(ly, lcdc))
+            if ((ly + 1) == 144) {
+              interruptFlags = (interruptFlags or 0b1)
+              if (getBit(stat, 4) == '1') {
+                interruptFlags = (interruptFlags or 0b10)
+              }
+            }
             state = 2
           } else {
             RAM.setByteAt(0xFF44, (ly + 1).toShort(), true)
-            if (ly.toInt() == 144) {
-              RAM.setByteAt(
-                  0xFF0F,
-                  (interruptFlags.toInt() or 0b00000001).toShort(),
-                  true)
-              if (getBit(stat, 4) == '1') {
-                RAM.setByteAt(
-                    0xFF0F,
-                    (interruptFlags.toInt() or 0b11).toShort(),
-                    true)
-              }
-            }
-            if (ly > 153) {
+            if ((ly + 1) > 153) {
               RAM.setByteAt(0xFF44, 0.toShort(), true)
               //clear
               display.update(lines)
@@ -261,20 +249,16 @@ object GPU {
             window = getBGData(WindowTileMap, BGandWindowTileData, BGandWindowMode)
             sprites = getSpriteList(spriteTileData, obp0, obp1, spriteSize)
             if (getBit(stat, 5) == '1') {
-              RAM.setByteAt(
-                  0xFF0F,
-                  (interruptFlags.toInt() or 0b10).toShort(),
-                  true)
+              interruptFlags = (interruptFlags or 0b10)
             }
             state = 2
           }
-          2 -> { state = 3 }
+          2 -> {
+            state = 3
+          }
           3 -> {
             if (getBit(stat, 3) == '1') {
-              RAM.setByteAt(
-                  0xFF0F,
-                  (interruptFlags.toInt() or 0b10).toShort(),
-                  true)
+              interruptFlags = (interruptFlags or 0b10)
             }
             state = 0
           }
@@ -284,5 +268,6 @@ object GPU {
       }
     }
     RAM.setByteAt(0xFF41, (statStr).toShort(2), true)
+    RAM.setByteAt(0xFF0F, interruptFlags.toShort(), true)
   }
 }

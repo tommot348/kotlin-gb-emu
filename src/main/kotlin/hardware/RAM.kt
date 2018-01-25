@@ -53,7 +53,7 @@ internal object RAM {
         val state = Input.getState(mode)
         state
       }
-      in 0xFEA0..0xFEFF -> 0xFF.toShort()
+      //in 0xFEA0..0xFEFF -> 0xFF.toShort()
       else -> ram[addr]
     }
   }
@@ -115,7 +115,7 @@ internal object RAM {
   }
   override fun toString() = ram.map({ it.toString(16).padStart(2, '0') }).reduceIndexed({
     i, prev, curr ->
-      if ((i!= 0) && ((i + 1).rem(16) == 0)) {
+      if ((i!= 0) && ((i + 1) % (16) == 0)) {
         prev+'\n'+curr
       } else {
         prev + curr

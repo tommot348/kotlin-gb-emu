@@ -22,7 +22,6 @@ object Input : KeyListener {
       KeyEvent.VK_Y -> b = true
     }
     if (true in listOf(a, b, select, start, up, down, left, right)) {
-      CPU.running = true
       val interruptFlags = RAM.getByteAt(0xFF0F)
       RAM.setByteAt(
             0xFF0F,
@@ -48,12 +47,12 @@ object Input : KeyListener {
     when (mode) {
       0b01 -> {
         val matrix = listOf(start, select, b, a).map({ if (it) 0 else 1 })
-        "0001${matrix.joinToString("")}".toShort(2)
+        "1101${matrix.joinToString("")}".toShort(2)
       }
       0b10 -> {
         val matrix = listOf(down, up, left, right).map({ if (it) 0 else 1 })
-        "0010${matrix.joinToString("")}".toShort(2)
+        "1110${matrix.joinToString("")}".toShort(2)
       }
-      else -> 0b00001111.toShort()
+      else -> 0b11111111.toShort()
     }
 }

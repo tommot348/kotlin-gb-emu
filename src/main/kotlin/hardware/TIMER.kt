@@ -6,10 +6,10 @@ object TIMER {
   private var running = false
   fun selectSpeed(nr: Int) {
     clocksTillTimerReset = when (nr and 0b11) {
-      0 -> 1024
-      1 -> 16
-      2 -> 64
-      3 -> 256
+      0 -> 256
+      1 -> 4
+      2 -> 16
+      3 -> 64
       else -> -1
     }
     running = (nr and 0b100) == 0b100
@@ -20,7 +20,7 @@ object TIMER {
       clocksTillTimer -= clock
     }
     if (clocksTillDiv <= 0) {
-      clocksTillDiv = 1024
+      clocksTillDiv = 256
       val div = RAM.getByteAt(0xFF04)
       if (div == 255.toShort()) {
         RAM.setByteAt(0xFF04, 0, true)
