@@ -80,16 +80,27 @@ internal object RAM {
         in 0xA000..0xBFFF -> {
           CARTRIDGE.setByteAt(addr, value)
         }
-        0xFF01 -> SERIAL.out(value)
+        in 0xE000..0xFDFF -> ram[addr - 0x2000] = value
+        0xFF01 -> {
+          SERIAL.out(value)
+          ram[addr] = value
+        }
         0xFF04 -> ram[0xFF04] = 0
-        0xFF07 -> TIMER.selectSpeed(value.toInt())
+        0xFF07 -> {
+          TIMER.selectSpeed(value.toInt())
+          ram[addr] = value
+        }
         0xFF44 -> ram[0xFF44] = 0
-        0xFF46 -> ((value * 0x100)..((value * 0x100) + 0x9F)).forEachIndexed({ i, curr ->
-          ram[0xFE00 + i] = ram[curr]
-        })
-        0xFF50 -> if (biosMapped) biosMapped = false else ram[addr] = value
-        0xFFFF -> {
-          println("newIntsEnabled: ${value.toString(2)}")
+        0xFF46 -> {
+          ((value * 0x100)..((value * 0x100) + 0x9F)).forEachIndexed({ i, curr ->
+            ram[0xFE00 + i] = ram[curr]
+          })
+          ram[addr] = value
+        }
+        0xFF50 -> {
+          if (biosMapped) {
+            biosMapped = false
+          }
           ram[addr] = value
         }
         else -> ram[addr] = value

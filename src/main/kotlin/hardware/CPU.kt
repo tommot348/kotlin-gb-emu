@@ -1105,43 +1105,74 @@ object CPU {
     0xfe to { RAM.setByteAt(HL, SET(RAM.getByteAt(HL), 7)); 16 },
     0xff to { A = SET(A, 7); 8 }
   )
-  internal fun INT(addr: Int) {
-    interrupts = false
-    push(PCh, PCl)
-    PC = addr
+  internal fun INT(addr: Int): () -> Unit {
+    return {
+      interrupts = false
+      push(PCh, PCl)
+      PC = addr
+    }
   }
   fun handleInterrupts() {
-    if (interrupts) {
-      val ints = RAM.getByteAt(0xFF0F).toInt()
-      val intsEnabled = RAM.getByteAt(0xFFFF).toInt()
-      if ((ints and intsEnabled) > 0) {
-        println("${ints.toString(2)}\n${intsEnabled.toString(2)}")
-        running = true
-        when {
-          (ints and 0b1) == 1 -> {
-            RAM.setByteAt(0xFF0F, (ints and 0b11111110).toShort())
-            INT(0x40)
-          }
-          (ints and 0b10) == 0b10 -> {
-            RAM.setByteAt(0xFF0F, (ints and 0b11111101).toShort())
-            INT(0x48)
-          }
-          (ints and 0b100) == 0b100 -> {
-            // println("Timer")
-            RAM.setByteAt(0xFF0F, (ints and 0b11111011).toShort())
-            INT(0x50)
-          }
-          (ints and 0b1000) == 0b1000 -> {
-            RAM.setByteAt(0xFF0F, (ints and 0b11110111).toShort())
-            INT(0x58)
-          }
-          (ints and 0b10000) == 0b10000 -> {
-            RAM.setByteAt(0xFF0F, (ints and 0b11101111).toShort())
-            INT(0x60)
-          }
+    val ints = checkInterrupts()
+    if (running) {
+      while (ints.size > 0) {
+        ints.removeAt(0)() //call int
+        while (!interrupts) {
+          //execute interrupt
+          time += CPU.tick()
         }
       }
+    } else {
+      if (ints.size > 0) {
+        ints.removeAt(0)() //call first int
+      }
+      while (!interrupts) {
+        //execute interrupt
+        val time = CPU.tick()
+        TIMER.tick(time)
+        GPU.tick(time)
+      }
     }
+  }
+  private fun checkInterrupts(): ArrayList<()->Unit> {
+    val int = ArrayList<()->Unit>()
+    do {
+      val intsRequested = RAM.getByteAt(0xFF0F).toInt()
+      val intsEnabled = RAM.getByteAt(0xFFFF).toInt()
+      val ints = if (running) {
+        if (interrupts) {
+          intsEnabled and intsRequested
+        } else {
+          0
+        }
+      } else {
+        intsRequested and intsEnabled
+      }
+      when {
+        (ints and 0b1) == 1 -> {
+          RAM.setByteAt(0xFF0F, (ints and 0b11111110).toShort())
+          int.add(INT(0x40))
+        }
+        (ints and 0b10) == 0b10 -> {
+          RAM.setByteAt(0xFF0F, (ints and 0b11111101).toShort())
+          int.add(INT(0x48))
+        }
+        (ints and 0b100) == 0b100 -> {
+          // println("Timer")
+          RAM.setByteAt(0xFF0F, (ints and 0b11111011).toShort())
+          int.add(INT(0x50))
+        }
+        (ints and 0b1000) == 0b1000 -> {
+          RAM.setByteAt(0xFF0F, (ints and 0b11110111).toShort())
+          int.add(INT(0x58))
+        }
+        (ints and 0b10000) == 0b10000 -> {
+          RAM.setByteAt(0xFF0F, (ints and 0b11101111).toShort())
+          int.add(INT(0x60))
+        }
+      }
+    } while (ints > 0)
+    return int
   }
 
   @Synchronized override fun toString() = """

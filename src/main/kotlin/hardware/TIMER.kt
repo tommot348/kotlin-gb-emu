@@ -1,19 +1,18 @@
 package de.prt.gb.hardware
 object TIMER {
-  private var clocksTillDiv = 64
-  private var clocksTillTimerReset = 256
-  private var clocksTillTimer = 256
-  private var running = true
+  private var clocksTillDiv = 256
+  private var clocksTillTimerReset = 1024
+  private var clocksTillTimer = 1024
+  private var running = false
   fun selectSpeed(nr: Int) {
     clocksTillTimerReset = when (nr and 0b11) {
-      0 -> 256
-      1 -> 4
-      2 -> 16
-      3 -> 64
+      0 -> 1024
+      1 -> 16
+      2 -> 64
+      3 -> 256
       else -> -1
     }
     running = (nr and 0b100) == 0b100
-    println("$clocksTillTimerReset $running")
   }
   fun tick(clock: Int) {
     if (running) {
@@ -21,7 +20,7 @@ object TIMER {
       clocksTillTimer -= clock
     }
     if (clocksTillDiv <= 0) {
-      clocksTillDiv = 256
+      clocksTillDiv = 1024
       val div = RAM.getByteAt(0xFF04)
       if (div == 255.toShort()) {
         RAM.setByteAt(0xFF04, 0, true)
@@ -35,7 +34,6 @@ object TIMER {
       if (timer == 255.toShort()) {
         RAM.setByteAt(0xFF05, RAM.getByteAt(0xFF06), true)
         val interruptFlags = RAM.getByteAt(0xFF0F)
-        CPU.running = true
         RAM.setByteAt(
               0xFF0F,
               (interruptFlags.toInt() or 0b100).toShort(),

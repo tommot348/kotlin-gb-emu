@@ -30,11 +30,8 @@ fun main(args: Array<String>) {
     try {
       CPU.handleInterrupts()
       val time = CPU.tick()
-      CPU.handleInterrupts()
       TIMER.tick(time)
-      CPU.handleInterrupts()
       GPU.tick(time)
-      CPU.handleInterrupts()
     } catch (e: Exception) {
       e.printStackTrace()
       println(CPU)
