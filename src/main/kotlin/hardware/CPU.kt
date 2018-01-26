@@ -1110,13 +1110,12 @@ object CPU {
       interrupts = false
       push(PCh, PCl)
       PC = addr
-      20
+      24
     }
   }
   fun handleInterrupts() {
     val ints = checkInterrupts()
     if (ints.size > 0) {
-      running = true
       val time = ((ints.removeAt(0))())
       TIMER.tick(time)
       GPU.tick(time)
@@ -1127,12 +1126,11 @@ object CPU {
     do {
       val intsRequested = RAM.getByteAt(0xFF0F).toInt()
       val intsEnabled = RAM.getByteAt(0xFFFF).toInt()
-      val ints = if (interrupts || !running) {
-          if (running) {
+      if (!running && ((intsEnabled and intsRequested) > 0)) {
+        running = true
+      }
+      val ints = if (interrupts) {
             intsEnabled and intsRequested
-          } else {
-            intsRequested
-          }
       } else {
         0
       }
