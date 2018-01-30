@@ -1,5 +1,5 @@
 package de.prt.gb.hardware
-object SERIAL {
+internal object SERIAL {
   fun out(dat: Short) {
     print(dat.toChar())
   }

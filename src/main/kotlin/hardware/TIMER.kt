@@ -1,5 +1,5 @@
 package de.prt.gb.hardware
-object TIMER {
+internal object TIMER {
   private var clocksTillDiv = 256
   private var clocksTillTimerReset = 1024
   private var clocksTillTimer = 1024

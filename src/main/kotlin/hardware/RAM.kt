@@ -4,8 +4,6 @@ import de.prt.gb.hardware.mbc.ROM
 import de.prt.gb.hardware.mbc.Unsupported
 import de.prt.gb.hardware.mbc.MemoryBankController
 
-import de.prt.gb.ui.IInput
-
 import kotlin.system.exitProcess
 
 internal object CARTRIDGE {
@@ -45,19 +43,15 @@ internal object BIOS {
 }
 
 internal object RAM {
-  private var input: IInput? = null
   private val ram = Array(65536, { 0.toShort() })
   var biosMapped = true
-  fun setInput(inp: IInput) {
-    input = inp
-  }
   @Synchronized fun getByteAt(addr: Int): Short {
     return when (addr) {
       in 0..0xFF -> if (biosMapped) BIOS.getByteAt(addr) else ram[addr]
       in 0xE000..0xFDFF -> ram[addr - 0x2000]
       0xFF00 -> {
         val mode = (0b00110000 and ram[0xFF00].toInt()) shr 4
-        val state = input!!.getState(mode)
+        val state = (Machine.input?.getState(mode)) ?: 0b11111111
         state
       }
       //in 0xFEA0..0xFEFF -> 0xFF.toShort()

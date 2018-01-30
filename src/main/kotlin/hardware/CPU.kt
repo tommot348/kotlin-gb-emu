@@ -1,6 +1,6 @@
 package de.prt.gb.hardware
 
-object CPU {
+internal object CPU {
   internal var A: Short = 0
   internal var B: Short = 0
   internal var C: Short = 0
