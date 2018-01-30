@@ -5,6 +5,10 @@ import de.prt.gb.hardware.GPU
 import de.prt.gb.hardware.BIOS
 import de.prt.gb.hardware.CARTRIDGE
 import de.prt.gb.hardware.TIMER
+import de.prt.gb.hardware.RAM
+
+import de.prt.gb.ui.Display
+import de.prt.gb.ui.Input
 
 import kotlin.system.exitProcess
 
@@ -26,6 +30,11 @@ fun main(args: Array<String>) {
   val rom = java.io.File(args[0])
   BIOS.load(bios.toShortList())
   CARTRIDGE.load(rom.toShortList())
+  val display = Display("kotlin_gb_emu")
+  val input = Input()
+  display.addKeyListener(input)
+  GPU.setOutput(display)
+  RAM.setInput(input)
   while (true) {
     try {
       CPU.handleInterrupts()

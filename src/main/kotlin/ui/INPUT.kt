@@ -1,7 +1,8 @@
-package de.prt.gb.hardware
+package de.prt.gb.ui
+import de.prt.gb.hardware.RAM
 import java.awt.event.KeyListener
 import java.awt.event.KeyEvent
-object Input : KeyListener {
+final class Input : KeyListener, IInput {
   private var left = false
   private var right = false
   private var up = false
@@ -39,11 +40,10 @@ object Input : KeyListener {
       KeyEvent.VK_SPACE -> select = false
       KeyEvent.VK_A -> a = false
       KeyEvent.VK_Y -> b = false
-      KeyEvent.VK_P -> CPU.print = !CPU.print
     }
   }
   override fun keyTyped(e: KeyEvent) {}
-  fun getState(mode: Int): Short =
+  override fun getState(mode: Int): Short =
     when (mode) {
       0b01 -> {
         val matrix = listOf(start, select, b, a).map({ if (it) 0 else 1 })

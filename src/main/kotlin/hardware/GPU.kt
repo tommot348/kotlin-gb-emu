@@ -1,4 +1,5 @@
 package de.prt.gb.hardware
+import de.prt.gb.ui.IDisplay
 private data class Sprite(
   val x: Short,
   val y: Short,
@@ -8,7 +9,7 @@ private data class Sprite(
   val palette: List<Int>,
   val dat: List<Int>)
 object GPU {
-  internal val display = Display()
+  internal var display: IDisplay? = null
   internal val stateClocks = mapOf(0 to 201,
                           1 to 4560,
                           2 to 77,
@@ -17,8 +18,9 @@ object GPU {
   internal var lastClock = 0
   internal var clocksTillNextState: Int = stateClocks[state] ?: 0
 
-  init {
-    display.showWindow()
+  fun setOutput(output: IDisplay) {
+    display = output
+    display?.showWindow()
   }
 
   internal fun getBit(of: Short, nr: Int): Char {
@@ -216,7 +218,7 @@ object GPU {
             if ((ly + 1) > 153) {
               RAM.setByteAt(0xFF44, 0.toShort(), true)
               //clear
-              display.update(lines)
+              display?.update(lines)
               lines.removeAll({ true })
               state = 1
             } else {

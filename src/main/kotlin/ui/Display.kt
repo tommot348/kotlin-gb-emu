@@ -1,4 +1,4 @@
-package de.prt.gb.hardware
+package de.prt.gb.ui
 import javax.swing.SwingUtilities
 import javax.swing.JFrame
 import javax.swing.JPanel
@@ -7,7 +7,7 @@ import java.awt.Dimension
 import java.awt.Color
 import java.awt.Graphics
 
-private class FrameBuffer : JPanel() {
+private final class FrameBuffer : JPanel() {
   val dat = ArrayList<List<Int>>()
   init {
     setBorder(BorderFactory.createLineBorder(Color.black))
@@ -31,26 +31,25 @@ private class FrameBuffer : JPanel() {
     })
   }
 }
-internal class Display : JFrame("Test") {
+internal final class Display(name: String) : JFrame(name), IDisplay {
   private val fb = FrameBuffer()
   init {
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     add(fb)
-    addKeyListener(Input)
   }
-  @Synchronized fun update(lines: ArrayList<List<Int>>) {
+  @Synchronized override fun update(lines: ArrayList<List<Int>>) {
     if ((! (fb.dat == lines)) && (lines.size != 0)) {
       fb.dat.removeAll({ true })
       fb.dat.addAll(lines)
       repaint()
     }
   }
-  fun showWindow() {
+  override fun showWindow() {
     SwingUtilities.invokeLater(Runnable() {
       setVisible(true)
     })
   }
-  fun hideWindow() {
+  override fun hideWindow() {
     SwingUtilities.invokeLater(Runnable() {
       setVisible(false)
     })
