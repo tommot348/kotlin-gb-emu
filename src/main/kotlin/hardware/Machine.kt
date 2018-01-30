@@ -1,4 +1,5 @@
 package de.prt.gb.hardware
+import kotlin.concurrent.thread
 import de.prt.gb.ui.IInput
 import de.prt.gb.ui.IDisplay
 import java.io.File
@@ -42,8 +43,16 @@ object Machine {
     loadBios(File(biosPath))
     CPU.PC = 0
   }
+  private fun run() {
+    thread {
+      while (running) {
+        tick()
+      }
+    }
+  }
   fun start() {
     running = true
+    run()
   }
   fun stop() {
     running = false

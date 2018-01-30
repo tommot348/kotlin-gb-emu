@@ -9,11 +9,9 @@ import javax.swing.JFileChooser
 import de.prt.gb.hardware.Machine
 
 final class MainWindow(name: String) : JFrame(name) {
-  private val fb = Display()
   init {
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
     setJMenuBar(MainMenu())
-    add(fb)
   }
   fun showWindow() {
     SwingUtilities.invokeLater {
@@ -30,6 +28,14 @@ final class MainWindow(name: String) : JFrame(name) {
 internal class MainMenu : JMenuBar() {
   init {
     val menu = JMenu("Main")
+    val openBios = JMenuItem("open bios")
+    openBios.addActionListener {
+      val fc = JFileChooser()
+      val ret = fc.showOpenDialog(null)
+      if (ret == JFileChooser.APPROVE_OPTION) {
+        Machine.loadBios(fc.getSelectedFile())
+      }
+    }
     val openRom = JMenuItem("open rom")
     openRom.addActionListener {
       val fc = JFileChooser()
@@ -55,6 +61,7 @@ internal class MainMenu : JMenuBar() {
       exitProcess(0)
     }
     menu.add(openRom)
+    menu.add(openBios)
     menu.add(start)
     menu.add(stop)
     menu.add(reset)

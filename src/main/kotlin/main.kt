@@ -9,9 +9,6 @@ import de.prt.gb.ui.Input
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-  if (args.size == 0) {
-    exitProcess(-1)
-  }
   val mainWindow = MainWindow("kotlin_gb_emu")
   val display = Display()
   mainWindow.add(display)
@@ -20,7 +17,4 @@ fun main(args: Array<String>) {
   mainWindow.addKeyListener(input)
   Machine.input = input
   Machine.display = display
-  while (Machine.running) {
-    Machine.tick()
-  }
 }
