@@ -21,16 +21,18 @@ internal final class Display : JPanel(), IDisplay {
   }
   override fun paintComponent(g: Graphics) {
     super.paintComponent(g)
-    dat.forEachIndexed({ y, line ->
-      line.forEachIndexed({ x, color ->
-        when (color) {
-          3 -> g.setColor(Color.BLACK)
-          2 -> g.setColor(Color.DARK_GRAY)
-          1 -> g.setColor(Color.LIGHT_GRAY)
-          0 -> g.setColor(Color.WHITE)
-        }
-        g.fillRect(x * 4, y * 4, 4, 4)
+    dat.let {
+      it.forEachIndexed({ y, line ->
+        line.forEachIndexed({ x, color ->
+          when (color) {
+            3 -> g.setColor(Color.BLACK)
+            2 -> g.setColor(Color.DARK_GRAY)
+            1 -> g.setColor(Color.LIGHT_GRAY)
+            0 -> g.setColor(Color.WHITE)
+          }
+          g.fillRect(x * 4, y * 4, 4, 4)
+        })
       })
-    })
+    }
   }
 }

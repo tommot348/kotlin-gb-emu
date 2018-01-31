@@ -19,6 +19,9 @@ object Machine {
   private var biosPath = ""
   var input: IInput? = null
   var display: IDisplay? = null
+  fun getRamImage(): Array<Short> =
+    RAM.clone()
+  fun getPC() = CPU.PC
   private fun loadFile(file: File): List<Short> {
     CPU.PC = 0
     return (file).toShortList()
@@ -51,8 +54,10 @@ object Machine {
     }
   }
   fun start() {
-    running = true
-    run()
+    if (!running) {
+      running = true
+      run()
+    }
   }
   fun stop() {
     running = false

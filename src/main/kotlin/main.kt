@@ -6,8 +6,6 @@ import de.prt.gb.ui.Display
 import de.prt.gb.ui.MainWindow
 import de.prt.gb.ui.Input
 
-import kotlin.system.exitProcess
-
 fun main(args: Array<String>) {
   val mainWindow = MainWindow("kotlin_gb_emu")
   val display = Display()

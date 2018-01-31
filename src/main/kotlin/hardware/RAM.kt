@@ -45,6 +45,10 @@ internal object BIOS {
 internal object RAM {
   private val ram = Array(65536, { 0.toShort() })
   var biosMapped = true
+
+  fun clone(): Array<Short> =
+    ram.clone()
+
   @Synchronized fun getByteAt(addr: Int): Short {
     return when (addr) {
       in 0..0xFF -> if (biosMapped) BIOS.getByteAt(addr) else ram[addr]
